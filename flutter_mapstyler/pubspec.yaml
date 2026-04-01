@@ -1,0 +1,20 @@
+name: flutter_mapstyler
+description: Renders mapstyler_style types on flutter_map — the bridge between format-independent cartographic styles and Flutter map visualization.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+dependencies:
+  mapstyler_style:
+    path: ../mapstyler_style
+  flutter_map: ^7.0.0
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^4.0.0
