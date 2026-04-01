@@ -11,6 +11,7 @@ dependencies:
   mapstyler_style:
     path: ../mapstyler_style
   flutter_map_sld: ^0.5.0
+  gml4dart: ^0.1.0
 
 dev_dependencies:
   test: ^1.25.0
