@@ -3,6 +3,17 @@
 sealed class Geometry {
   const Geometry();
 
+  factory Geometry.fromJson(Map<String, dynamic> json) {
+    final type = json['type'] as String;
+    return switch (type) {
+      'Point' => PointGeometry._fromJson(json),
+      'Envelope' => EnvelopeGeometry._fromJson(json),
+      'LineString' => LineStringGeometry._fromJson(json),
+      'Polygon' => PolygonGeometry._fromJson(json),
+      _ => throw FormatException('Unknown geometry type: $type'),
+    };
+  }
+
   Map<String, dynamic> toJson();
 }
 
@@ -11,6 +22,14 @@ final class PointGeometry extends Geometry {
   final double y;
 
   const PointGeometry(this.x, this.y);
+
+  factory PointGeometry._fromJson(Map<String, dynamic> json) {
+    final coords = json['coordinates'] as List<dynamic>;
+    return PointGeometry(
+      (coords[0] as num).toDouble(),
+      (coords[1] as num).toDouble(),
+    );
+  }
 
   @override
   Map<String, dynamic> toJson() => {
@@ -40,6 +59,16 @@ final class EnvelopeGeometry extends Geometry {
     required this.maxY,
   });
 
+  factory EnvelopeGeometry._fromJson(Map<String, dynamic> json) {
+    final bbox = json['bbox'] as List<dynamic>;
+    return EnvelopeGeometry(
+      minX: (bbox[0] as num).toDouble(),
+      minY: (bbox[1] as num).toDouble(),
+      maxX: (bbox[2] as num).toDouble(),
+      maxY: (bbox[3] as num).toDouble(),
+    );
+  }
+
   @override
   Map<String, dynamic> toJson() => {
         'type': 'Envelope',
@@ -64,6 +93,13 @@ final class LineStringGeometry extends Geometry {
 
   const LineStringGeometry(this.coordinates);
 
+  factory LineStringGeometry._fromJson(Map<String, dynamic> json) {
+    final coords = json['coordinates'] as List<dynamic>;
+    return LineStringGeometry(
+      coords.map((c) => _parseCoord(c as List<dynamic>)).toList(),
+    );
+  }
+
   @override
   Map<String, dynamic> toJson() => {
         'type': 'LineString',
@@ -84,6 +120,16 @@ final class PolygonGeometry extends Geometry {
 
   const PolygonGeometry(this.rings);
 
+  factory PolygonGeometry._fromJson(Map<String, dynamic> json) {
+    final rings = json['coordinates'] as List<dynamic>;
+    return PolygonGeometry([
+      for (final ring in rings)
+        (ring as List<dynamic>)
+            .map((c) => _parseCoord(c as List<dynamic>))
+            .toList(),
+    ]);
+  }
+
   @override
   Map<String, dynamic> toJson() => {
         'type': 'Polygon',
@@ -99,6 +145,9 @@ final class PolygonGeometry extends Geometry {
   @override
   int get hashCode => Object.hashAll(rings.map(Object.hashAll));
 }
+
+(double, double) _parseCoord(List<dynamic> c) =>
+    ((c[0] as num).toDouble(), (c[1] as num).toDouble());
 
 bool _coordsEqual(List<(double, double)> a, List<(double, double)> b) {
   if (a.length != b.length) return false;

@@ -62,6 +62,16 @@ sealed class Filter {
     return switch (op) {
       '!' => NegationFilter._fromJson(json),
       '&&' || '||' => CombinationFilter._fromJson(json),
+      'bbox' ||
+      'intersects' ||
+      'within' ||
+      'contains' ||
+      'touches' ||
+      'crosses' ||
+      'overlaps' ||
+      'disjoint' =>
+        SpatialFilter._fromJson(json),
+      'dWithin' || 'beyond' => DistanceFilter._fromJson(json),
       _ => ComparisonFilter._fromJson(json),
     };
   }
@@ -173,6 +183,25 @@ final class SpatialFilter extends Filter {
     required this.geometry,
   });
 
+  factory SpatialFilter._fromJson(List<dynamic> json) {
+    final op = SpatialOperator.values.firstWhere(
+      (e) => e.name == json[0],
+      orElse: () => throw FormatException('Unknown spatial operator: ${json[0]}'),
+    );
+    // json[1] is either a propertyName (String) or geometry (Map)
+    if (json[1] is String) {
+      return SpatialFilter(
+        operator: op,
+        propertyName: json[1] as String,
+        geometry: Geometry.fromJson(json[2] as Map<String, dynamic>),
+      );
+    }
+    return SpatialFilter(
+      operator: op,
+      geometry: Geometry.fromJson(json[1] as Map<String, dynamic>),
+    );
+  }
+
   @override
   List<dynamic> toJson() => [
         operator.name,
@@ -208,6 +237,30 @@ final class DistanceFilter extends Filter {
     required this.distance,
     this.units = '',
   });
+
+  factory DistanceFilter._fromJson(List<dynamic> json) {
+    final op = DistanceOperator.values.firstWhere(
+      (e) => e.name == json[0],
+      orElse: () =>
+          throw FormatException('Unknown distance operator: ${json[0]}'),
+    );
+    // json[1] is either a propertyName (String) or geometry (Map)
+    if (json[1] is String) {
+      return DistanceFilter(
+        operator: op,
+        propertyName: json[1] as String,
+        geometry: Geometry.fromJson(json[2] as Map<String, dynamic>),
+        distance: (json[3] as num).toDouble(),
+        units: json[4] as String,
+      );
+    }
+    return DistanceFilter(
+      operator: op,
+      geometry: Geometry.fromJson(json[1] as Map<String, dynamic>),
+      distance: (json[2] as num).toDouble(),
+      units: json[3] as String,
+    );
+  }
 
   @override
   List<dynamic> toJson() => [
