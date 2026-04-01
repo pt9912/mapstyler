@@ -62,4 +62,4 @@ Alle Packages außer `flutter_mapstyler` sind **pure Dart** — nutzbar in Flutt
 
 ## Lizenz
 
-BSD-2-Clause — siehe [LICENSE](LICENSE).
+MIT — siehe [LICENSE](LICENSE).

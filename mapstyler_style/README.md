@@ -40,4 +40,4 @@ for (final rule in style.rules) {
 
 ## License
 
-BSD-2-Clause — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
