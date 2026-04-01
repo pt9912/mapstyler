@@ -8,4 +8,6 @@ workspace:
   - mapstyler_style
   - mapstyler_mapbox_parser
   - mapstyler_sld_adapter
+  - qml4dart
+  - mapstyler_qml_adapter
   - flutter_mapstyler
