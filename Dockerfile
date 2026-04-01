@@ -1,6 +1,7 @@
 ## ---------------------------------------------------------------------------
 ## Pure Dart packages
-## (mapstyler_style, mapstyler_mapbox_parser, mapstyler_sld_adapter)
+## (mapstyler_style, mapstyler_mapbox_parser, mapstyler_sld_adapter,
+##  qml4dart, mapstyler_qml_adapter)
 ## ---------------------------------------------------------------------------
 FROM dart:stable AS base
 
@@ -19,12 +20,17 @@ RUN sed -i '/flutter_mapstyler/d' pubspec.yaml
 COPY mapstyler_style/pubspec.yaml mapstyler_style/pubspec.yaml
 COPY mapstyler_mapbox_parser/pubspec.yaml mapstyler_mapbox_parser/pubspec.yaml
 COPY mapstyler_sld_adapter/pubspec.yaml mapstyler_sld_adapter/pubspec.yaml
+COPY qml4dart/pubspec.yaml qml4dart/pubspec.yaml
+COPY mapstyler_qml_adapter/pubspec.yaml mapstyler_qml_adapter/pubspec.yaml
 
 # Placeholder libs so pub get can resolve
 RUN mkdir -p mapstyler_style/lib mapstyler_mapbox_parser/lib mapstyler_sld_adapter/lib \
+    qml4dart/lib mapstyler_qml_adapter/lib \
     && touch mapstyler_style/lib/mapstyler_style.dart \
     && touch mapstyler_mapbox_parser/lib/mapstyler_mapbox_parser.dart \
-    && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart
+    && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart \
+    && touch qml4dart/lib/qml4dart.dart \
+    && touch mapstyler_qml_adapter/lib/mapstyler_qml_adapter.dart
 
 RUN dart pub get
 
@@ -32,6 +38,8 @@ RUN dart pub get
 COPY mapstyler_style/ mapstyler_style/
 COPY mapstyler_mapbox_parser/ mapstyler_mapbox_parser/
 COPY mapstyler_sld_adapter/ mapstyler_sld_adapter/
+COPY qml4dart/ qml4dart/
+COPY mapstyler_qml_adapter/ mapstyler_qml_adapter/
 
 ## ---------------------------------------------------------------------------
 ## mapstyler_style
@@ -191,6 +199,44 @@ WORKDIR /app/mapstyler_sld_adapter
 RUN dart pub publish --dry-run
 
 ## ---------------------------------------------------------------------------
+## qml4dart
+## ---------------------------------------------------------------------------
+
+# Analyze
+FROM base AS qml-analyze
+WORKDIR /app/qml4dart
+RUN dart analyze
+
+# Test
+FROM base AS qml-test
+WORKDIR /app/qml4dart
+RUN dart test
+
+# Publish dry-run
+FROM base AS qml-publish-check
+WORKDIR /app/qml4dart
+RUN dart pub publish --dry-run
+
+## ---------------------------------------------------------------------------
+## mapstyler_qml_adapter
+## ---------------------------------------------------------------------------
+
+# Analyze
+FROM base AS qml-adapter-analyze
+WORKDIR /app/mapstyler_qml_adapter
+RUN dart analyze
+
+# Test
+FROM base AS qml-adapter-test
+WORKDIR /app/mapstyler_qml_adapter
+RUN dart test
+
+# Publish dry-run
+FROM base AS qml-adapter-publish-check
+WORKDIR /app/mapstyler_qml_adapter
+RUN dart pub publish --dry-run
+
+## ---------------------------------------------------------------------------
 ## Flutter package: flutter_mapstyler
 ## ---------------------------------------------------------------------------
 FROM ghcr.io/cirruslabs/flutter:stable AS flutter-base
@@ -209,14 +255,19 @@ COPY pubspec.yaml pubspec.yaml
 COPY mapstyler_style/pubspec.yaml mapstyler_style/pubspec.yaml
 COPY mapstyler_mapbox_parser/pubspec.yaml mapstyler_mapbox_parser/pubspec.yaml
 COPY mapstyler_sld_adapter/pubspec.yaml mapstyler_sld_adapter/pubspec.yaml
+COPY qml4dart/pubspec.yaml qml4dart/pubspec.yaml
+COPY mapstyler_qml_adapter/pubspec.yaml mapstyler_qml_adapter/pubspec.yaml
 COPY flutter_mapstyler/pubspec.yaml flutter_mapstyler/pubspec.yaml
 
 # Placeholder libs so pub get can resolve
 RUN mkdir -p mapstyler_style/lib mapstyler_mapbox_parser/lib \
-    mapstyler_sld_adapter/lib flutter_mapstyler/lib \
+    mapstyler_sld_adapter/lib qml4dart/lib mapstyler_qml_adapter/lib \
+    flutter_mapstyler/lib \
     && touch mapstyler_style/lib/mapstyler_style.dart \
     && touch mapstyler_mapbox_parser/lib/mapstyler_mapbox_parser.dart \
     && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart \
+    && touch qml4dart/lib/qml4dart.dart \
+    && touch mapstyler_qml_adapter/lib/mapstyler_qml_adapter.dart \
     && touch flutter_mapstyler/lib/flutter_mapstyler.dart
 
 RUN flutter pub get
@@ -225,6 +276,8 @@ RUN flutter pub get
 COPY mapstyler_style/ mapstyler_style/
 COPY mapstyler_mapbox_parser/ mapstyler_mapbox_parser/
 COPY mapstyler_sld_adapter/ mapstyler_sld_adapter/
+COPY qml4dart/ qml4dart/
+COPY mapstyler_qml_adapter/ mapstyler_qml_adapter/
 COPY flutter_mapstyler/ flutter_mapstyler/
 
 # Analyze
