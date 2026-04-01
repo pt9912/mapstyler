@@ -24,13 +24,14 @@ mapstyler_style (Kern-Typen, basierend auf GeoStyler + eigene Erweiterungen)
     ↑
     ├── mapstyler_mapbox_parser   (basierend auf GeoStyler TS)
     ├── mapstyler_sld_adapter     (Mapping-Layer auf flutter_map_sld)
-    ├── mapstyler_qgis_parser     (basierend auf GeoStyler TS, optional)
+    ├── mapstyler_qml_adapter     (Adapter von qml4dart nach mapstyler_style, optional)
     └── mapstyler_lyrx_parser     (basierend auf GeoStyler TS, optional)
 
 flutter_map_sld (bestehend, pure Dart) ──→ mapstyler_sld_adapter
+qml4dart (eigenständiges QGIS-QML-Package) ──→ mapstyler_qml_adapter
 ```
 
-Alle Parser sind unabhängig voneinander und implementieren ein gemeinsames `StyleParser<T>`-Interface.
+Alle Parser und Adapter sind unabhängig voneinander. Nur die mapstyler-Parser selbst implementieren das gemeinsame `StyleParser<T>`-Interface; `qml4dart` bleibt bewusst ein eigenständiges QML-Package.
 
 ## Lizenz
 
@@ -49,10 +50,9 @@ Die Portierung basiert auf folgenden Versionen (Stand März 2026):
 |---|---|---|
 | `geostyler-style` | _vor Beginn festlegen_ | _pinnen_ |
 | `geostyler-mapbox-parser` | _vor Beginn festlegen_ | _pinnen_ |
-| `geostyler-qgis-parser` | _vor Beginn festlegen_ | _pinnen_ |
 | `geostyler-lyrx-parser` | _vor Beginn festlegen_ | _pinnen_ |
 
-`geostyler-sld-parser` wird nicht direkt portiert (siehe Phase 3 – Adapter-Ansatz mit `flutter_map_sld`). Die 121 SLD-Test-Fixtures daraus dienen aber als Referenz für Round-Trip-Tests.
+`geostyler-sld-parser` wird nicht direkt portiert (siehe Phase 3 – Adapter-Ansatz mit `flutter_map_sld`). Die 121 SLD-Test-Fixtures daraus dienen aber als Referenz für Round-Trip-Tests. `geostyler-qgis-parser` wird ebenfalls nicht direkt portiert; für QML ist stattdessen ein eigenständiges Package `qml4dart` plus separater `mapstyler_qml_adapter` vorgesehen.
 
 ### Upstream-Sync
 
@@ -115,13 +115,14 @@ Evaluiert per Prototyp (`prototypes/mapstyler_style_manual/` vs. `prototypes/map
 
 ## Das GeoStyler-JSON-Format
 
-GeoStyler definiert ein eigenes JSON-basiertes Zwischenformat – das zentrale Austauschformat des gesamten Ökosystems. Alle Parser konvertieren **von** ihrem Format (SLD, Mapbox, QML, LYRX) **in** dieses Format und umgekehrt:
+GeoStyler definiert ein eigenes JSON-basiertes Zwischenformat – das zentrale Austauschformat des mapstyler-Kerns. Die mapstyler-Parser und -Adapter konvertieren **von** ihrem Format **in** dieses Format und umgekehrt:
 
 ```
 SLD XML ──────┐                                    ┌──→ SLD XML
 Mapbox GL JSON┤                                    ├──→ Mapbox GL JSON
-QGIS QML ─────┼──→ GeoStyler JSON (Zwischenformat) ──┼──→ QGIS QML
+QGIS QML ──→ qml4dart ──→ mapstyler_qml_adapter ───┤
 LYRX JSON ────┘                                    └──→ ...
+                         GeoStyler JSON (Zwischenformat)
 ```
 
 ### Beispiel: GeoStyler-JSON
@@ -494,7 +495,7 @@ SLD XML ──→ flutter_map_sld (bestehender Parser) ──→ flutter_map_sld
                                                            │
                                                  ┌─────────┼─────────┐
                                                  ▼         ▼         ▼
-                                           Mapbox JSON   QML    flutter_map
+                                           Mapbox JSON  QML Adapter  flutter_map
 ```
 
 **Aufwand:** Niedrig–Mittel (Typ-Mapping, kein XML-Parsing; erweitert durch Spatial Filters und Composite Expressions seit flutter_map_sld 0.5.0)
@@ -533,20 +534,36 @@ SLD XML ──→ flutter_map_sld (bestehender Parser) ──→ flutter_map_sld
 
 **Nutzen:** Hoch – SLD-Unterstützung mit moderatem Aufwand, da der Parser bereits existiert und seit 0.5.0 deutlich umfangreicher ist.
 
-### Phase 4 – `mapstyler_qgis_parser` (optional)
+### Phase 4 – `qml4dart` (optional, eigenständiges Package)
 
-**Ziel:** Konvertierung QGIS QML ↔ GeoStyler.
+**Ziel:** Lesen, Modellieren und Schreiben von QGIS QML als eigenständiges Dart-Package.
 
-**Aufwand:** Mittel (~1.625 Zeilen TS inkl. CQL-Parser → geschätzt ~1.800–2.200 Zeilen Dart)
+**Aufwand:** Mittel (Neuimplementierung auf Basis öffentlicher QML-Struktur und realer Fixtures)
 
-**Dependencies:** `xml`-Package, `mapstyler_style`, eigener CQL-Mini-Parser (~177 Zeilen)
+**Dependencies:** `xml`-Package
 
 **Besonderheiten:**
 - QGIS-spezifische Konzepte: Symbol-Layer, Einheitenumrechnung (mm/inch/pt → px)
-- CQL-Filter-Expressions für regelbasiertes Rendering
-- `color`-Package (HSLA → Hex) → in Dart trivial mit `Color`-Klasse
+- natives QML-Objektmodell statt direkter Abbildung auf `mapstyler_style`
+- Lesen aus String/Datei und Schreiben in String/Datei
+- kompatibilitätsgetriebene Implementierung statt direkter GeoStyler-Port
 
-### Phase 5 – `mapstyler_lyrx_parser` (optional)
+**Nutzen:** Moderat – schafft die Grundlage für QGIS-QML-Support in pure Dart, unabhängig von mapstyler.
+
+### Phase 5 – `mapstyler_qml_adapter` (optional)
+
+**Ziel:** Konvertierung `qml4dart` ↔ `mapstyler_style`.
+
+**Aufwand:** Mittel (abhängig vom finalen `qml4dart`-Objektmodell und gewünschter Abdeckung)
+
+**Dependencies:** `qml4dart`, `mapstyler_style`
+
+**Besonderheiten:**
+- saubere Trennung zwischen QML-Domäne und mapstyler-Domäne
+- nicht jede QML-Struktur wird verlustfrei in `mapstyler_style` passen
+- Adapter kann schrittweise entlang der tatsächlich benötigten Renderer wachsen
+
+### Phase 6 – `mapstyler_lyrx_parser` (optional)
 
 **Ziel:** ArcGIS LYRX → GeoStyler (nur Lesen).
 
@@ -567,11 +584,12 @@ SLD XML ──→ flutter_map_sld (bestehender Parser) ──→ flutter_map_sld
 | 1 | `mapstyler_style` | 2.200 | 2.500–3.500 | Mittel | Kritisch |
 | 2 | `mapstyler_mapbox_parser` | 2.400 | 2.500–3.000 | Mittel | Sehr hoch |
 | 3 | `mapstyler_sld_adapter` | – | 800–1.200 | Niedrig–Mittel | Hoch |
-| 4 | `mapstyler_qgis_parser` | 1.625 | 1.800–2.200 | Mittel | Moderat |
-| 5 | `mapstyler_lyrx_parser` | 4.470 | 4.000–4.500 | Mittel | Niedrig |
-| | **Gesamt** | **~10.700** | **~11.600–14.400** | | |
+| 4 | `qml4dart` | – | 1.500–2.500 | Mittel | Moderat |
+| 5 | `mapstyler_qml_adapter` | – | 600–1.200 | Niedrig–Mittel | Moderat |
+| 6 | `mapstyler_lyrx_parser` | 4.470 | 4.000–4.500 | Mittel | Niedrig |
+| | **Gesamt** | **~9.100** | **~11.900–15.900** | | |
 
-Phase 3 wird durch den Mapping-Ansatz drastisch reduziert: statt ~3.500–4.000 Zeilen SLD-Parser nur ~800–1.200 Zeilen Typ-Mapping. Seit flutter_map_sld 0.5.0 ist der Mapping-Umfang gewachsen (Spatial Filters, Composite Expressions), bleibt aber überschaubar. Phase 1 + 2 allein (~4.600 Zeilen TS → ~5.000–6.500 Zeilen Dart) liefern bereits den größten Nutzen: ein vollständiges Dart-Typsystem für kartographische Stile plus den wichtigsten Parser (Mapbox GL).
+Phase 3 wird durch den Mapping-Ansatz drastisch reduziert: statt ~3.500–4.000 Zeilen SLD-Parser nur ~800–1.200 Zeilen Typ-Mapping. Seit flutter_map_sld 0.5.0 ist der Mapping-Umfang gewachsen (Spatial Filters, Composite Expressions), bleibt aber überschaubar. Für QML trennt die neue Struktur bewusst Codec und Adapter: erst `qml4dart`, dann bei Bedarf `mapstyler_qml_adapter`. Phase 1 + 2 allein (~4.600 Zeilen TS → ~5.000–6.500 Zeilen Dart) liefern bereits den größten Nutzen: ein vollständiges Dart-Typsystem für kartographische Stile plus den wichtigsten Parser (Mapbox GL).
 
 ## Detailliertes Typ-Mapping: flutter_map_sld ↔ mapstyler_style
 
@@ -862,9 +880,11 @@ mapstyler/
 │   │       └── mapstyler_to_sld.dart    # mapstyler_style → flutter_map_sld
 │   ├── test/
 │   └── pubspec.yaml                    # depends on mapstyler_style, flutter_map_sld
-├── mapstyler_qgis_parser/          # Phase 4
-│   └── ...                             # depends on mapstyler_style, xml
-├── mapstyler_lyrx_parser/          # Phase 5
+├── qml4dart/                       # Phase 4 – eigenständiges QML-Package
+│   └── ...                             # depends on xml
+├── mapstyler_qml_adapter/         # Phase 5 – Mapping-Layer
+│   └── ...                             # depends on qml4dart, mapstyler_style
+├── mapstyler_lyrx_parser/         # Phase 6
 │   └── ...                             # depends on mapstyler_style, image
 └── flutter_mapstyler/              # Flutter-Rendering
     ├── lib/
@@ -888,3 +908,5 @@ mapstyler/
 7. **Phase 1 starten** – `mapstyler_style`: Kern-Typen, Expressions, Parser-Interface
 8. **Referenz-JSONs generieren** – TS-Tests ausführen, erwartete Outputs exportieren
 9. **Phase 2 starten** – Mapbox-Parser portieren und gegen Fixtures testen
+10. **QML separat aufsetzen** – `qml4dart` als eigenständiges Package mit QML-Objektmodell und XML-Codec
+11. **Adapter nur bei Bedarf bauen** – `mapstyler_qml_adapter` erst nach stabilem `qml4dart`
