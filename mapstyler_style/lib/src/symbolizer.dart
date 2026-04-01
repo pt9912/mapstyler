@@ -14,6 +14,7 @@ sealed class Symbolizer {
       'Mark' => MarkSymbolizer.fromJson(json),
       'Icon' => IconSymbolizer.fromJson(json),
       'Text' => TextSymbolizer.fromJson(json),
+      'Raster' => RasterSymbolizer.fromJson(json),
       _ => throw FormatException('Unknown symbolizer kind: $kind'),
     };
   }
@@ -306,6 +307,288 @@ final class TextSymbolizer extends Symbolizer {
   @override
   int get hashCode => Object.hash(
       label, color, size, font, opacity, rotate, haloColor, haloWidth, placement);
+}
+
+// -- Raster supporting types --
+
+final class ColorMapEntry {
+  final String color;
+  final double quantity;
+  final String? label;
+  final double? opacity;
+
+  const ColorMapEntry({
+    required this.color,
+    required this.quantity,
+    this.label,
+    this.opacity,
+  });
+
+  factory ColorMapEntry.fromJson(Map<String, dynamic> json) => ColorMapEntry(
+        color: json['color'] as String,
+        quantity: (json['quantity'] as num).toDouble(),
+        label: json['label'] as String?,
+        opacity: (json['opacity'] as num?)?.toDouble(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'color': color,
+        'quantity': quantity,
+        if (label != null) 'label': label,
+        if (opacity != null) 'opacity': opacity,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ColorMapEntry &&
+          color == other.color &&
+          quantity == other.quantity &&
+          label == other.label &&
+          opacity == other.opacity;
+
+  @override
+  int get hashCode => Object.hash(color, quantity, label, opacity);
+}
+
+final class ColorMap {
+  final String type; // 'ramp', 'intervals', 'values'
+  final List<ColorMapEntry> colorMapEntries;
+  final bool? extended;
+
+  const ColorMap({
+    required this.type,
+    this.colorMapEntries = const [],
+    this.extended,
+  });
+
+  factory ColorMap.fromJson(Map<String, dynamic> json) => ColorMap(
+        type: json['type'] as String,
+        colorMapEntries: (json['colorMapEntries'] as List<dynamic>? ?? [])
+            .map((e) => ColorMapEntry.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        extended: json['extended'] as bool?,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'type': type,
+        'colorMapEntries': colorMapEntries.map((e) => e.toJson()).toList(),
+        if (extended != null) 'extended': extended,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ColorMap &&
+          type == other.type &&
+          _listEquals(colorMapEntries, other.colorMapEntries) &&
+          extended == other.extended;
+
+  @override
+  int get hashCode =>
+      Object.hash(type, Object.hashAll(colorMapEntries), extended);
+}
+
+final class ContrastEnhancement {
+  final String? enhancementType; // 'normalize', 'histogram', 'none'
+  final double? gammaValue;
+
+  const ContrastEnhancement({this.enhancementType, this.gammaValue});
+
+  factory ContrastEnhancement.fromJson(Map<String, dynamic> json) =>
+      ContrastEnhancement(
+        enhancementType: json['enhancementType'] as String?,
+        gammaValue: (json['gammaValue'] as num?)?.toDouble(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        if (enhancementType != null) 'enhancementType': enhancementType,
+        if (gammaValue != null) 'gammaValue': gammaValue,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ContrastEnhancement &&
+          enhancementType == other.enhancementType &&
+          gammaValue == other.gammaValue;
+
+  @override
+  int get hashCode => Object.hash(enhancementType, gammaValue);
+}
+
+final class Channel {
+  final String sourceChannelName;
+  final ContrastEnhancement? contrastEnhancement;
+
+  const Channel({required this.sourceChannelName, this.contrastEnhancement});
+
+  factory Channel.fromJson(Map<String, dynamic> json) => Channel(
+        sourceChannelName: json['sourceChannelName'] as String,
+        contrastEnhancement: json['contrastEnhancement'] != null
+            ? ContrastEnhancement.fromJson(
+                json['contrastEnhancement'] as Map<String, dynamic>)
+            : null,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'sourceChannelName': sourceChannelName,
+        if (contrastEnhancement != null)
+          'contrastEnhancement': contrastEnhancement!.toJson(),
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Channel &&
+          sourceChannelName == other.sourceChannelName &&
+          contrastEnhancement == other.contrastEnhancement;
+
+  @override
+  int get hashCode => Object.hash(sourceChannelName, contrastEnhancement);
+}
+
+final class ChannelSelection {
+  final Channel? redChannel;
+  final Channel? greenChannel;
+  final Channel? blueChannel;
+  final Channel? grayChannel;
+
+  const ChannelSelection({
+    this.redChannel,
+    this.greenChannel,
+    this.blueChannel,
+    this.grayChannel,
+  });
+
+  factory ChannelSelection.fromJson(Map<String, dynamic> json) =>
+      ChannelSelection(
+        redChannel: json['redChannel'] != null
+            ? Channel.fromJson(json['redChannel'] as Map<String, dynamic>)
+            : null,
+        greenChannel: json['greenChannel'] != null
+            ? Channel.fromJson(json['greenChannel'] as Map<String, dynamic>)
+            : null,
+        blueChannel: json['blueChannel'] != null
+            ? Channel.fromJson(json['blueChannel'] as Map<String, dynamic>)
+            : null,
+        grayChannel: json['grayChannel'] != null
+            ? Channel.fromJson(json['grayChannel'] as Map<String, dynamic>)
+            : null,
+      );
+
+  Map<String, dynamic> toJson() => {
+        if (redChannel != null) 'redChannel': redChannel!.toJson(),
+        if (greenChannel != null) 'greenChannel': greenChannel!.toJson(),
+        if (blueChannel != null) 'blueChannel': blueChannel!.toJson(),
+        if (grayChannel != null) 'grayChannel': grayChannel!.toJson(),
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChannelSelection &&
+          redChannel == other.redChannel &&
+          greenChannel == other.greenChannel &&
+          blueChannel == other.blueChannel &&
+          grayChannel == other.grayChannel;
+
+  @override
+  int get hashCode =>
+      Object.hash(redChannel, greenChannel, blueChannel, grayChannel);
+}
+
+// -- RasterSymbolizer --
+
+final class RasterSymbolizer extends Symbolizer {
+  final Expression<double>? opacity;
+  final ColorMap? colorMap;
+  final ChannelSelection? channelSelection;
+  final ContrastEnhancement? contrastEnhancement;
+  final Expression<double>? hueRotate;
+  final Expression<double>? brightnessMin;
+  final Expression<double>? brightnessMax;
+  final Expression<double>? saturation;
+  final Expression<double>? contrast;
+
+  const RasterSymbolizer({
+    this.opacity,
+    this.colorMap,
+    this.channelSelection,
+    this.contrastEnhancement,
+    this.hueRotate,
+    this.brightnessMin,
+    this.brightnessMax,
+    this.saturation,
+    this.contrast,
+  });
+
+  @override
+  String get kind => 'Raster';
+
+  factory RasterSymbolizer.fromJson(Map<String, dynamic> json) =>
+      RasterSymbolizer(
+        opacity: _optExpr(json, 'opacity', _dbl),
+        colorMap: json['colorMap'] != null
+            ? ColorMap.fromJson(json['colorMap'] as Map<String, dynamic>)
+            : null,
+        channelSelection: json['channelSelection'] != null
+            ? ChannelSelection.fromJson(
+                json['channelSelection'] as Map<String, dynamic>)
+            : null,
+        contrastEnhancement: json['contrastEnhancement'] != null
+            ? ContrastEnhancement.fromJson(
+                json['contrastEnhancement'] as Map<String, dynamic>)
+            : null,
+        hueRotate: _optExpr(json, 'hueRotate', _dbl),
+        brightnessMin: _optExpr(json, 'brightnessMin', _dbl),
+        brightnessMax: _optExpr(json, 'brightnessMax', _dbl),
+        saturation: _optExpr(json, 'saturation', _dbl),
+        contrast: _optExpr(json, 'contrast', _dbl),
+      );
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'kind': 'Raster',
+        if (opacity != null) 'opacity': opacity!.toJson(),
+        if (colorMap != null) 'colorMap': colorMap!.toJson(),
+        if (channelSelection != null)
+          'channelSelection': channelSelection!.toJson(),
+        if (contrastEnhancement != null)
+          'contrastEnhancement': contrastEnhancement!.toJson(),
+        if (hueRotate != null) 'hueRotate': hueRotate!.toJson(),
+        if (brightnessMin != null) 'brightnessMin': brightnessMin!.toJson(),
+        if (brightnessMax != null) 'brightnessMax': brightnessMax!.toJson(),
+        if (saturation != null) 'saturation': saturation!.toJson(),
+        if (contrast != null) 'contrast': contrast!.toJson(),
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RasterSymbolizer &&
+          opacity == other.opacity &&
+          colorMap == other.colorMap &&
+          channelSelection == other.channelSelection &&
+          contrastEnhancement == other.contrastEnhancement &&
+          hueRotate == other.hueRotate &&
+          brightnessMin == other.brightnessMin &&
+          brightnessMax == other.brightnessMax &&
+          saturation == other.saturation &&
+          contrast == other.contrast;
+
+  @override
+  int get hashCode => Object.hash(opacity, colorMap, channelSelection,
+      contrastEnhancement, hueRotate, brightnessMin, brightnessMax, saturation, contrast);
+}
+
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 // -- Helpers --
