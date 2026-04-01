@@ -8,6 +8,7 @@ pubspec.lock
 .idea/
 *.iml
 .vscode/
+.codex
 
 # macOS
 .DS_Store
