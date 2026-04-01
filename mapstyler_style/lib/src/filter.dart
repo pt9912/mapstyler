@@ -1,19 +1,37 @@
 import 'expression.dart';
 import 'geometry.dart';
 
-// -- Enums --
+// ---------------------------------------------------------------------------
+// Operator enums
+// ---------------------------------------------------------------------------
 
+/// Comparison operators for [ComparisonFilter].
 enum ComparisonOperator {
+  /// Equal: `==`
   eq('=='),
+
+  /// Not equal: `!=`
   neq('!='),
+
+  /// Less than: `<`
   lt('<'),
+
+  /// Greater than: `>`
   gt('>'),
+
+  /// Less than or equal: `<=`
   lte('<='),
+
+  /// Greater than or equal: `>=`
   gte('>=');
 
+  /// The JSON string representation of this operator.
   final String jsonValue;
   const ComparisonOperator(this.jsonValue);
 
+  /// Parses a [ComparisonOperator] from its JSON string.
+  ///
+  /// Throws [FormatException] if [value] is not a known operator.
   static ComparisonOperator fromJson(String value) =>
       ComparisonOperator.values.firstWhere(
         (e) => e.jsonValue == value,
@@ -21,13 +39,21 @@ enum ComparisonOperator {
       );
 }
 
+/// Logical combination operators for [CombinationFilter].
 enum CombinationOperator {
+  /// Logical AND: `&&`
   and('&&'),
+
+  /// Logical OR: `||`
   or('||');
 
+  /// The JSON string representation of this operator.
   final String jsonValue;
   const CombinationOperator(this.jsonValue);
 
+  /// Parses a [CombinationOperator] from its JSON string.
+  ///
+  /// Throws [FormatException] if [value] is not a known operator.
   static CombinationOperator fromJson(String value) =>
       CombinationOperator.values.firstWhere(
         (e) => e.jsonValue == value,
@@ -35,6 +61,10 @@ enum CombinationOperator {
       );
 }
 
+/// Spatial relation operators for [SpatialFilter].
+///
+/// OGC Filter Encoding 2.0 compliant. **mapstyler extension** — not
+/// present in the GeoStyler TypeScript original.
 enum SpatialOperator {
   bbox,
   intersects,
@@ -46,17 +76,42 @@ enum SpatialOperator {
   disjoint,
 }
 
+/// Distance-based operators for [DistanceFilter].
+///
+/// **mapstyler extension** — not present in the GeoStyler TypeScript
+/// original.
 enum DistanceOperator {
+  /// Features within a given distance.
   dWithin,
+
+  /// Features beyond a given distance.
   beyond,
 }
 
-// -- Filter hierarchy --
+// ---------------------------------------------------------------------------
+// Filter hierarchy
+// ---------------------------------------------------------------------------
 
-/// GeoStyler filter — array-based JSON: ["==", "landuse", "residential"]
+/// A filter that selects features based on their properties or geometry.
+///
+/// Uses GeoStyler's array-based JSON format:
+/// ```json
+/// ["==", "landuse", "residential"]
+/// ["&&", ["==", "type", "road"], [">", "width", 5]]
+/// ```
+///
+/// Subclasses:
+/// - [ComparisonFilter] — property value comparisons (`==`, `!=`, `<`, etc.)
+/// - [CombinationFilter] — logical AND/OR of sub-filters.
+/// - [NegationFilter] — logical NOT.
+/// - [SpatialFilter] — geometry-based filtering (mapstyler extension).
+/// - [DistanceFilter] — distance-based filtering (mapstyler extension).
 sealed class Filter {
   const Filter();
 
+  /// Deserializes a filter from its array-based JSON representation.
+  ///
+  /// Dispatches on the operator string at index 0.
   factory Filter.fromJson(List<dynamic> json) {
     final op = json[0] as String;
     return switch (op) {
@@ -76,12 +131,25 @@ sealed class Filter {
     };
   }
 
+  /// Serializes this filter to its array-based JSON representation.
   List<dynamic> toJson();
 }
 
+// ---------------------------------------------------------------------------
+// ComparisonFilter
+// ---------------------------------------------------------------------------
+
+/// Compares a feature property against a value.
+///
+/// JSON: `["==", "fieldName", "value"]`
 final class ComparisonFilter extends Filter {
+  /// The comparison operator.
   final ComparisonOperator operator;
+
+  /// The property name expression (typically a literal string).
   final Expression<String> property;
+
+  /// The value to compare against.
   final Expression<Object> value;
 
   const ComparisonFilter({
@@ -92,8 +160,10 @@ final class ComparisonFilter extends Filter {
 
   factory ComparisonFilter._fromJson(List<dynamic> json) {
     final op = ComparisonOperator.fromJson(json[0] as String);
-    final property = Expression.fromJson<String>(json[1], (v) => v as String);
-    final value = Expression.fromJson<Object>(json[2], (v) => v as Object);
+    final property =
+        Expression.fromJson<String>(json[1], (v) => v as String);
+    final value =
+        Expression.fromJson<Object>(json[2], (v) => v as Object);
     return ComparisonFilter(operator: op, property: property, value: value);
   }
 
@@ -116,8 +186,19 @@ final class ComparisonFilter extends Filter {
   int get hashCode => Object.hash(operator, property, value);
 }
 
+// ---------------------------------------------------------------------------
+// CombinationFilter
+// ---------------------------------------------------------------------------
+
+/// Combines multiple sub-filters with a logical operator.
+///
+/// JSON: `["&&", <filter1>, <filter2>, ...]`
 final class CombinationFilter extends Filter {
+  /// The logical operator ([CombinationOperator.and] or
+  /// [CombinationOperator.or]).
   final CombinationOperator operator;
+
+  /// The sub-filters to combine.
   final List<Filter> filters;
 
   const CombinationFilter({
@@ -151,7 +232,15 @@ final class CombinationFilter extends Filter {
   int get hashCode => Object.hash(operator, Object.hashAll(filters));
 }
 
+// ---------------------------------------------------------------------------
+// NegationFilter
+// ---------------------------------------------------------------------------
+
+/// Negates a sub-filter (logical NOT).
+///
+/// JSON: `["!", <filter>]`
 final class NegationFilter extends Filter {
+  /// The filter to negate.
   final Filter filter;
   const NegationFilter({required this.filter});
 
@@ -170,11 +259,26 @@ final class NegationFilter extends Filter {
   int get hashCode => filter.hashCode;
 }
 
-/// Spatial filter — mapstyler extension (not in GeoStyler TS).
-/// OGC Filter Encoding 2.0 compliant.
+// ---------------------------------------------------------------------------
+// SpatialFilter
+// ---------------------------------------------------------------------------
+
+/// Filters features by spatial relationship to a geometry.
+///
+/// **mapstyler extension** — OGC Filter Encoding 2.0 compliant,
+/// not present in the GeoStyler TypeScript original.
+///
+/// JSON: `["intersects", <geometry>]` or
+/// `["intersects", "propertyName", <geometry>]`
 final class SpatialFilter extends Filter {
+  /// The spatial relationship to test.
   final SpatialOperator operator;
+
+  /// Optional geometry property name. When `null`, the feature's
+  /// default geometry is used.
   final String? propertyName;
+
+  /// The reference geometry to test against.
   final Geometry geometry;
 
   const SpatialFilter({
@@ -186,9 +290,10 @@ final class SpatialFilter extends Filter {
   factory SpatialFilter._fromJson(List<dynamic> json) {
     final op = SpatialOperator.values.firstWhere(
       (e) => e.name == json[0],
-      orElse: () => throw FormatException('Unknown spatial operator: ${json[0]}'),
+      orElse: () =>
+          throw FormatException('Unknown spatial operator: ${json[0]}'),
     );
-    // json[1] is either a propertyName (String) or geometry (Map)
+    // json[1] is either a propertyName (String) or geometry (Map).
     if (json[1] is String) {
       return SpatialFilter(
         operator: op,
@@ -221,13 +326,31 @@ final class SpatialFilter extends Filter {
   int get hashCode => Object.hash(operator, propertyName, geometry);
 }
 
-/// Distance filter — mapstyler extension (not in GeoStyler TS).
-/// OGC Filter Encoding 2.0: DWithin, Beyond.
+// ---------------------------------------------------------------------------
+// DistanceFilter
+// ---------------------------------------------------------------------------
+
+/// Filters features by distance to a reference geometry.
+///
+/// **mapstyler extension** — OGC Filter Encoding 2.0 compliant,
+/// not present in the GeoStyler TypeScript original.
+///
+/// JSON: `["dWithin", <geometry>, 1000.0, "m"]` or
+/// `["dWithin", "propertyName", <geometry>, 1000.0, "m"]`
 final class DistanceFilter extends Filter {
+  /// Whether to match features within or beyond the distance.
   final DistanceOperator operator;
+
+  /// Optional geometry property name.
   final String? propertyName;
+
+  /// The reference geometry to measure distance from.
   final Geometry geometry;
+
+  /// The distance threshold.
   final double distance;
+
+  /// The unit of measurement (e.g. `"m"`, `"km"`).
   final String units;
 
   const DistanceFilter({
@@ -244,7 +367,7 @@ final class DistanceFilter extends Filter {
       orElse: () =>
           throw FormatException('Unknown distance operator: ${json[0]}'),
     );
-    // json[1] is either a propertyName (String) or geometry (Map)
+    // json[1] is either a propertyName (String) or geometry (Map).
     if (json[1] is String) {
       return DistanceFilter(
         operator: op,

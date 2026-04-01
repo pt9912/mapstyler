@@ -1,11 +1,27 @@
 import 'expression.dart';
 
-/// GeoStyler function — JSON: {"name": "functionName", "args": [...]}
+/// A GeoStyler function that computes a value from arguments.
+///
+/// JSON: `{"name": "functionName", "args": [...]}`.
+///
+/// Subclasses:
+/// - [PropertyGet] — reads a feature property by name.
+/// - [ArgsFunction] — generic function with expression arguments
+///   (math, string, boolean operations).
+/// - [CaseFunction] — conditional value selection (if/else chain).
+/// - [StepFunction] — discrete value steps at boundaries.
+/// - [InterpolateFunction] — continuous interpolation between stops.
 sealed class GeoStylerFunction {
   const GeoStylerFunction();
 
+  /// The function name as used in JSON (e.g. `"property"`, `"add"`).
   String get name;
 
+  /// Deserializes a function from its JSON map.
+  ///
+  /// Dispatches on the `name` field. Known structured functions
+  /// (`property`, `case`, `step`, `interpolate`) get specific types;
+  /// all others are parsed as [ArgsFunction].
   factory GeoStylerFunction.fromJson(Map<String, dynamic> json) {
     final name = json['name'] as String;
     return switch (name) {
@@ -17,12 +33,22 @@ sealed class GeoStylerFunction {
     };
   }
 
+  /// Serializes this function to its JSON map.
   Map<String, dynamic> toJson();
 }
 
-// -- PropertyGet --
+// ---------------------------------------------------------------------------
+// PropertyGet
+// ---------------------------------------------------------------------------
 
+/// Reads a feature property value by name.
+///
+/// JSON: `{"name": "property", "args": ["fieldName"]}`.
+///
+/// This is the most common function — used wherever a symbolizer
+/// property depends on feature data (e.g. dynamic colors or labels).
 final class PropertyGet extends GeoStylerFunction {
+  /// The name of the feature property to read.
   final String propertyName;
   const PropertyGet(this.propertyName);
 
@@ -49,24 +75,36 @@ final class PropertyGet extends GeoStylerFunction {
   int get hashCode => propertyName.hashCode;
 }
 
-// -- ArgsFunction --
+// ---------------------------------------------------------------------------
+// ArgsFunction
+// ---------------------------------------------------------------------------
 
-/// Generic function for simple math/string/boolean operations.
+/// Generic function for simple operations with expression arguments.
 ///
-/// Numeric: add, subtract, multiply, divide, modulo, pow, abs, ceil, floor,
-///   round, sqrt, log, exp, min, max, pi, random, rint,
-///   acos, asin, atan, atan2, cos, sin, tan, toDegrees, toRadians
+/// Covers all GeoStyler functions that follow the flat
+/// `{"name": "...", "args": [...]}` pattern:
 ///
-/// String: strConcat, strToLowerCase, strToUpperCase, strTrim,
-///   strLength, strSubstring, strReplace, strIndexOf,
-///   strStartsWith, strEndsWith, strMatches, numberFormat
+/// **Numeric:** `add`, `subtract`, `multiply`, `divide`, `modulo`, `pow`,
+/// `abs`, `ceil`, `floor`, `round`, `sqrt`, `log`, `exp`, `min`, `max`,
+/// `pi`, `random`, `rint`, `acos`, `asin`, `atan`, `atan2`, `cos`, `sin`,
+/// `tan`, `toDegrees`, `toRadians`.
 ///
-/// Boolean: all, any, between, equalTo, notEqualTo,
-///   greaterThan, greaterThanOrEqualTo, lessThan, lessThanOrEqualTo,
-///   in, parseBoolean, not
+/// **String:** `strConcat`, `strToLowerCase`, `strToUpperCase`, `strTrim`,
+/// `strLength`, `strSubstring`, `strReplace`, `strIndexOf`,
+/// `strStartsWith`, `strEndsWith`, `strMatches`, `numberFormat`.
+///
+/// **Boolean:** `all`, `any`, `between`, `equalTo`, `notEqualTo`,
+/// `greaterThan`, `greaterThanOrEqualTo`, `lessThan`,
+/// `lessThanOrEqualTo`, `in`, `parseBoolean`, `not`.
+///
+/// Unknown function names are also parsed into this type for forward
+/// compatibility.
 final class ArgsFunction extends GeoStylerFunction {
   @override
   final String name;
+
+  /// The function arguments as expressions (may be literals or nested
+  /// functions).
   final List<Expression<Object>> args;
 
   const ArgsFunction({required this.name, this.args = const []});
@@ -95,14 +133,21 @@ final class ArgsFunction extends GeoStylerFunction {
   int get hashCode => Object.hash(name, Object.hashAll(args));
 }
 
-// -- CaseFunction --
+// ---------------------------------------------------------------------------
+// CaseFunction
+// ---------------------------------------------------------------------------
 
+/// A single condition/value pair used in [CaseFunction].
 final class CaseParameter {
+  /// The boolean condition expression.
   final Expression<Object> condition;
+
+  /// The value to use when [condition] is true.
   final Expression<Object> value;
 
   const CaseParameter({required this.condition, required this.value});
 
+  /// Deserializes from `{"case": <expr>, "value": <expr>}`.
   factory CaseParameter.fromJson(Map<String, dynamic> json) => CaseParameter(
         condition:
             Expression.fromJson<Object>(json['case'], (v) => v as Object),
@@ -110,6 +155,7 @@ final class CaseParameter {
             Expression.fromJson<Object>(json['value'], (v) => v as Object),
       );
 
+  /// Serializes to `{"case": <expr>, "value": <expr>}`.
   Map<String, dynamic> toJson() => {
         'case': condition.toJson(),
         'value': value.toJson(),
@@ -126,10 +172,27 @@ final class CaseParameter {
   int get hashCode => Object.hash(condition, value);
 }
 
-/// GeoStyler case function:
-/// {"name": "case", "args": [{case: expr, value: expr}, ..., fallback]}
+/// Conditional value selection — an if/else chain with a fallback.
+///
+/// JSON:
+/// ```json
+/// {
+///   "name": "case",
+///   "args": [
+///     {"case": <condition>, "value": <result>},
+///     {"case": <condition>, "value": <result>},
+///     <fallback>
+///   ]
+/// }
+/// ```
+///
+/// The [cases] are evaluated in order; the first matching condition's
+/// value is returned. If no condition matches, [fallback] is used.
 final class CaseFunction extends GeoStylerFunction {
+  /// Condition/value pairs, evaluated in order.
   final List<CaseParameter> cases;
+
+  /// The value to use when no condition matches.
   final Expression<Object> fallback;
 
   const CaseFunction({required this.cases, required this.fallback});
@@ -141,11 +204,10 @@ final class CaseFunction extends GeoStylerFunction {
     final args = json['args'] as List<dynamic>;
     final cases = <CaseParameter>[];
     for (var i = 0; i < args.length - 1; i++) {
-      cases.add(
-          CaseParameter.fromJson(args[i] as Map<String, dynamic>));
+      cases.add(CaseParameter.fromJson(args[i] as Map<String, dynamic>));
     }
-    final fallback = Expression.fromJson<Object>(
-        args.last, (v) => v as Object);
+    final fallback =
+        Expression.fromJson<Object>(args.last, (v) => v as Object);
     return CaseFunction(cases: cases, fallback: fallback);
   }
 
@@ -169,10 +231,16 @@ final class CaseFunction extends GeoStylerFunction {
   int get hashCode => Object.hash(Object.hashAll(cases), fallback);
 }
 
-// -- StepFunction --
+// ---------------------------------------------------------------------------
+// StepFunction
+// ---------------------------------------------------------------------------
 
+/// A boundary/value pair used in [StepFunction].
 final class StepParameter {
+  /// The boundary value at which [value] becomes active.
   final Expression<Object> boundary;
+
+  /// The output value for inputs >= [boundary] (until the next boundary).
   final Expression<Object> value;
 
   const StepParameter({required this.boundary, required this.value});
@@ -188,11 +256,27 @@ final class StepParameter {
   int get hashCode => Object.hash(boundary, value);
 }
 
-/// GeoStyler step function:
-/// {"name": "step", "args": [input, defaultValue, boundary1, value1, ...]}
+/// Discrete value selection at numeric boundaries.
+///
+/// JSON:
+/// ```json
+/// {
+///   "name": "step",
+///   "args": [<input>, <defaultValue>, <boundary1>, <value1>, ...]
+/// }
+/// ```
+///
+/// Returns [defaultValue] when [input] is below the first boundary.
+/// Otherwise returns the value associated with the highest boundary
+/// that is <= [input].
 final class StepFunction extends GeoStylerFunction {
+  /// The numeric input expression to evaluate.
   final Expression<Object> input;
+
+  /// The value to return when [input] is below all boundaries.
   final Expression<Object> defaultValue;
+
+  /// Boundary/value pairs, in ascending boundary order.
   final List<StepParameter> stops;
 
   const StepFunction({
@@ -206,17 +290,14 @@ final class StepFunction extends GeoStylerFunction {
 
   factory StepFunction._fromJson(Map<String, dynamic> json) {
     final args = json['args'] as List<dynamic>;
-    final input =
-        Expression.fromJson<Object>(args[0], (v) => v as Object);
+    final input = Expression.fromJson<Object>(args[0], (v) => v as Object);
     final defaultValue =
         Expression.fromJson<Object>(args[1], (v) => v as Object);
     final stops = <StepParameter>[];
     for (var i = 2; i < args.length - 1; i += 2) {
       stops.add(StepParameter(
-        boundary:
-            Expression.fromJson<Object>(args[i], (v) => v as Object),
-        value:
-            Expression.fromJson<Object>(args[i + 1], (v) => v as Object),
+        boundary: Expression.fromJson<Object>(args[i], (v) => v as Object),
+        value: Expression.fromJson<Object>(args[i + 1], (v) => v as Object),
       ));
     }
     return StepFunction(
@@ -249,10 +330,16 @@ final class StepFunction extends GeoStylerFunction {
       Object.hash(input, defaultValue, Object.hashAll(stops));
 }
 
-// -- InterpolateFunction --
+// ---------------------------------------------------------------------------
+// InterpolateFunction
+// ---------------------------------------------------------------------------
 
+/// A stop/value pair used in [InterpolateFunction].
 final class InterpolateParameter {
+  /// The numeric stop value.
   final Expression<Object> stop;
+
+  /// The output value at this stop.
   final Expression<Object> value;
 
   const InterpolateParameter({required this.stop, required this.value});
@@ -268,12 +355,31 @@ final class InterpolateParameter {
   int get hashCode => Object.hash(stop, value);
 }
 
-/// GeoStyler interpolate function:
-/// {"name": "interpolate", "args": [mode, input, stop1, value1, ...]}
-/// mode is ["linear"], ["exponential", base], or ["cubic"]
+/// Continuous interpolation between stop/value pairs.
+///
+/// JSON:
+/// ```json
+/// {
+///   "name": "interpolate",
+///   "args": [<mode>, <input>, <stop1>, <value1>, <stop2>, <value2>, ...]
+/// }
+/// ```
+///
+/// [mode] controls the interpolation curve:
+/// - `["linear"]` — linear interpolation.
+/// - `["exponential", base]` — exponential interpolation with the
+///   given base.
+/// - `["cubic"]` — cubic spline interpolation.
 final class InterpolateFunction extends GeoStylerFunction {
-  final List<Object> mode; // ["linear"], ["exponential", base], ["cubic"]
+  /// Interpolation mode: `["linear"]`, `["exponential", base]`, or
+  /// `["cubic"]`.
+  final List<Object> mode;
+
+  /// The numeric input expression to interpolate over.
   final Expression<Object> input;
+
+  /// Stop/value pairs defining the interpolation curve, in ascending
+  /// stop order.
   final List<InterpolateParameter> stops;
 
   const InterpolateFunction({
@@ -288,15 +394,12 @@ final class InterpolateFunction extends GeoStylerFunction {
   factory InterpolateFunction._fromJson(Map<String, dynamic> json) {
     final args = json['args'] as List<dynamic>;
     final mode = (args[0] as List<dynamic>).cast<Object>();
-    final input =
-        Expression.fromJson<Object>(args[1], (v) => v as Object);
+    final input = Expression.fromJson<Object>(args[1], (v) => v as Object);
     final stops = <InterpolateParameter>[];
     for (var i = 2; i < args.length - 1; i += 2) {
       stops.add(InterpolateParameter(
-        stop:
-            Expression.fromJson<Object>(args[i], (v) => v as Object),
-        value:
-            Expression.fromJson<Object>(args[i + 1], (v) => v as Object),
+        stop: Expression.fromJson<Object>(args[i], (v) => v as Object),
+        value: Expression.fromJson<Object>(args[i + 1], (v) => v as Object),
       ));
     }
     return InterpolateFunction(mode: mode, input: input, stops: stops);
@@ -324,10 +427,13 @@ final class InterpolateFunction extends GeoStylerFunction {
           _listEquals(stops, other.stops);
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(mode), input, Object.hashAll(stops));
+  int get hashCode =>
+      Object.hash(Object.hashAll(mode), input, Object.hashAll(stops));
 }
 
-// -- Helpers --
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 bool _listEquals<T>(List<T> a, List<T> b) {
   if (identical(a, b)) return true;

@@ -1,11 +1,27 @@
 import 'expression.dart';
 
-/// GeoStyler symbolizer — map-based JSON with "kind" discriminator.
+/// Defines how features are visually rendered on a map.
+///
+/// Each symbolizer type corresponds to a geometry or rendering mode:
+/// - [FillSymbolizer] — polygon fill and outline.
+/// - [LineSymbolizer] — line/stroke rendering.
+/// - [MarkSymbolizer] — point marks using well-known shapes.
+/// - [IconSymbolizer] — point marks using external images.
+/// - [TextSymbolizer] — text labels.
+/// - [RasterSymbolizer] — raster layer styling.
+///
+/// JSON uses a `kind` discriminator:
+/// `{"kind": "Fill", "color": "#ff0000", ...}`
 sealed class Symbolizer {
   const Symbolizer();
 
+  /// The symbolizer type identifier used in JSON.
   String get kind;
 
+  /// Deserializes a [Symbolizer] from a JSON map.
+  ///
+  /// Dispatches on the `kind` field. Throws [FormatException] for
+  /// unknown kinds.
   factory Symbolizer.fromJson(Map<String, dynamic> json) {
     final kind = json['kind'] as String;
     return switch (kind) {
@@ -19,9 +35,13 @@ sealed class Symbolizer {
     };
   }
 
+  /// Serializes this symbolizer to a JSON map.
   Map<String, dynamic> toJson();
 }
 
+/// Renders polygon features with a fill color and optional outline.
+///
+/// JSON: `{"kind": "Fill", "color": "#ffcc00", "opacity": 0.5, ...}`
 final class FillSymbolizer extends Symbolizer {
   final Expression<String>? color;
   final Expression<double>? opacity;
@@ -73,6 +93,9 @@ final class FillSymbolizer extends Symbolizer {
       Object.hash(color, opacity, fillOpacity, outlineColor, outlineWidth);
 }
 
+/// Renders line features with stroke, dash patterns, and line caps/joins.
+///
+/// JSON: `{"kind": "Line", "color": "#333", "width": 2.0, ...}`
 final class LineSymbolizer extends Symbolizer {
   final Expression<String>? color;
   final Expression<double>? width;
@@ -127,7 +150,13 @@ final class LineSymbolizer extends Symbolizer {
   int get hashCode => Object.hash(color, width, opacity, cap, join);
 }
 
+/// Renders point features using well-known shapes (circle, square,
+/// triangle, star, cross, x).
+///
+/// JSON: `{"kind": "Mark", "wellKnownName": "circle", "radius": 8, ...}`
 final class MarkSymbolizer extends Symbolizer {
+  /// The shape to render: `circle`, `square`, `triangle`, `star`,
+  /// `cross`, or `x`.
   final String wellKnownName;
   final Expression<double>? radius;
   final Expression<String>? color;
@@ -188,7 +217,11 @@ final class MarkSymbolizer extends Symbolizer {
       wellKnownName, radius, color, opacity, strokeColor, strokeWidth, rotate);
 }
 
+/// Renders point features using an external image (URL or asset path).
+///
+/// JSON: `{"kind": "Icon", "image": "marker.png", "size": 24, ...}`
 final class IconSymbolizer extends Symbolizer {
+  /// The image URL or path (required).
   final Expression<String> image;
   final String? format;
   final Expression<double>? size;
@@ -238,7 +271,14 @@ final class IconSymbolizer extends Symbolizer {
   int get hashCode => Object.hash(image, format, size, opacity, rotate);
 }
 
+/// Renders text labels for features, with optional halo effect.
+///
+/// JSON: `{"kind": "Text", "label": "Hello", "size": 14, ...}`
+///
+/// The [label] can be a literal string or a [FunctionExpression] that
+/// reads a feature property (e.g. `{"name": "property", "args": ["name"]}`).
 final class TextSymbolizer extends Symbolizer {
+  /// The text content to render (required).
   final Expression<String> label;
   final Expression<String>? color;
   final Expression<double>? size;
@@ -309,8 +349,11 @@ final class TextSymbolizer extends Symbolizer {
       label, color, size, font, opacity, rotate, haloColor, haloWidth, placement);
 }
 
-// -- Raster supporting types --
+// ---------------------------------------------------------------------------
+// Raster supporting types
+// ---------------------------------------------------------------------------
 
+/// A single entry in a [ColorMap], mapping a [quantity] to a [color].
 final class ColorMapEntry {
   final String color;
   final double quantity;
@@ -351,8 +394,10 @@ final class ColorMapEntry {
   int get hashCode => Object.hash(color, quantity, label, opacity);
 }
 
+/// Maps raster values to colors using entries and an interpolation mode.
 final class ColorMap {
-  final String type; // 'ramp', 'intervals', 'values'
+  /// The interpolation mode: `ramp`, `intervals`, or `values`.
+  final String type;
   final List<ColorMapEntry> colorMapEntries;
   final bool? extended;
 
@@ -389,8 +434,10 @@ final class ColorMap {
       Object.hash(type, Object.hashAll(colorMapEntries), extended);
 }
 
+/// Controls contrast enhancement for raster channels.
 final class ContrastEnhancement {
-  final String? enhancementType; // 'normalize', 'histogram', 'none'
+  /// The enhancement algorithm: `normalize`, `histogram`, or `none`.
+  final String? enhancementType;
   final double? gammaValue;
 
   const ContrastEnhancement({this.enhancementType, this.gammaValue});
@@ -417,6 +464,7 @@ final class ContrastEnhancement {
   int get hashCode => Object.hash(enhancementType, gammaValue);
 }
 
+/// A single raster channel with an optional contrast enhancement.
 final class Channel {
   final String sourceChannelName;
   final ContrastEnhancement? contrastEnhancement;
@@ -448,6 +496,10 @@ final class Channel {
   int get hashCode => Object.hash(sourceChannelName, contrastEnhancement);
 }
 
+/// Selects which raster bands map to RGB or grayscale display channels.
+///
+/// Either set [redChannel], [greenChannel], [blueChannel] for RGB, or
+/// [grayChannel] alone for single-band display.
 final class ChannelSelection {
   final Channel? redChannel;
   final Channel? greenChannel;
@@ -498,8 +550,14 @@ final class ChannelSelection {
       Object.hash(redChannel, greenChannel, blueChannel, grayChannel);
 }
 
-// -- RasterSymbolizer --
+// ---------------------------------------------------------------------------
+// RasterSymbolizer
+// ---------------------------------------------------------------------------
 
+/// Styles raster/tile layers with color maps, channel selection, and
+/// CSS-filter-inspired properties.
+///
+/// JSON: `{"kind": "Raster", "opacity": 0.8, "colorMap": {...}, ...}`
 final class RasterSymbolizer extends Symbolizer {
   final Expression<double>? opacity;
   final ColorMap? colorMap;

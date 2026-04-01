@@ -1,8 +1,22 @@
-/// Minimal geometry model for mapstyler spatial filters.
-/// Kept independent from gml4dart — mapping happens in the SLD adapter.
+/// Minimal geometry model for spatial filters.
+///
+/// Kept independent from `gml4dart` — mapping to GML geometries happens
+/// in `mapstyler_sld_adapter`. Uses GeoJSON-like JSON representation.
+///
+/// This is a **mapstyler extension** not present in the GeoStyler
+/// TypeScript original.
 sealed class Geometry {
   const Geometry();
 
+  /// Deserializes a geometry from a GeoJSON-like map.
+  ///
+  /// Dispatches on the `type` field:
+  /// - `Point` → [PointGeometry]
+  /// - `Envelope` → [EnvelopeGeometry]
+  /// - `LineString` → [LineStringGeometry]
+  /// - `Polygon` → [PolygonGeometry]
+  ///
+  /// Throws [FormatException] for unknown geometry types.
   factory Geometry.fromJson(Map<String, dynamic> json) {
     final type = json['type'] as String;
     return switch (type) {
@@ -14,11 +28,18 @@ sealed class Geometry {
     };
   }
 
+  /// Serializes this geometry to a GeoJSON-like map.
   Map<String, dynamic> toJson();
 }
 
+/// A single point with [x] (longitude) and [y] (latitude) coordinates.
+///
+/// JSON: `{"type": "Point", "coordinates": [8.5, 47.3]}`
 final class PointGeometry extends Geometry {
+  /// Longitude (or easting).
   final double x;
+
+  /// Latitude (or northing).
   final double y;
 
   const PointGeometry(this.x, this.y);
@@ -46,6 +67,9 @@ final class PointGeometry extends Geometry {
   int get hashCode => Object.hash(x, y);
 }
 
+/// An axis-aligned bounding box defined by its corner coordinates.
+///
+/// JSON: `{"type": "Envelope", "bbox": [minX, minY, maxX, maxY]}`
 final class EnvelopeGeometry extends Geometry {
   final double minX;
   final double minY;
@@ -88,7 +112,11 @@ final class EnvelopeGeometry extends Geometry {
   int get hashCode => Object.hash(minX, minY, maxX, maxY);
 }
 
+/// An ordered sequence of coordinate pairs forming a line.
+///
+/// JSON: `{"type": "LineString", "coordinates": [[x1, y1], [x2, y2], ...]}`
 final class LineStringGeometry extends Geometry {
+  /// Coordinate pairs as `(x, y)` records.
   final List<(double, double)> coordinates;
 
   const LineStringGeometry(this.coordinates);
@@ -109,13 +137,21 @@ final class LineStringGeometry extends Geometry {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LineStringGeometry && _coordsEqual(coordinates, other.coordinates);
+      other is LineStringGeometry &&
+          _coordsEqual(coordinates, other.coordinates);
 
   @override
   int get hashCode => Object.hashAll(coordinates);
 }
 
+/// A polygon defined by one exterior ring and optional interior rings (holes).
+///
+/// JSON: `{"type": "Polygon", "coordinates": [[[x, y], ...], ...]}`
+///
+/// The first element of [rings] is the exterior boundary; subsequent
+/// elements are interior holes.
 final class PolygonGeometry extends Geometry {
+  /// Rings as lists of `(x, y)` coordinate records.
   final List<List<(double, double)>> rings;
 
   const PolygonGeometry(this.rings);
