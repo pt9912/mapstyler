@@ -1,0 +1,12 @@
+name: mapstyler_style
+description: Core types for cartographic styling — Symbolizers, Filters, Expressions, and the StyleParser interface. Compatible with the GeoStyler JSON format.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^4.0.0
