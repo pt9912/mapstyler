@@ -55,7 +55,7 @@ ENV PATH="/root/.pub-cache/bin:${PATH}"
 WORKDIR /app/mapstyler_style
 RUN dart test --coverage=coverage
 RUN dart pub global run coverage:format_coverage \
-    --packages=.dart_tool/package_config.json \
+    --package=. \
     --report-on=lib \
     --lcov \
     --in=coverage \
@@ -114,7 +114,7 @@ ENV PATH="/root/.pub-cache/bin:${PATH}"
 WORKDIR /app/mapstyler_mapbox_parser
 RUN dart test --coverage=coverage
 RUN dart pub global run coverage:format_coverage \
-    --packages=.dart_tool/package_config.json \
+    --package=. \
     --report-on=lib \
     --lcov \
     --in=coverage \
@@ -163,7 +163,7 @@ ENV PATH="/root/.pub-cache/bin:${PATH}"
 WORKDIR /app/mapstyler_sld_adapter
 RUN dart test --coverage=coverage
 RUN dart pub global run coverage:format_coverage \
-    --packages=.dart_tool/package_config.json \
+    --package=. \
     --report-on=lib \
     --lcov \
     --in=coverage \
