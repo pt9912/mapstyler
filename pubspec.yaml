@@ -1,0 +1,11 @@
+name: mapstyler_workspace
+publish_to: none
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+workspace:
+  - mapstyler_style
+  - mapstyler_mapbox_parser
+  - mapstyler_sld_adapter
+  - flutter_mapstyler
