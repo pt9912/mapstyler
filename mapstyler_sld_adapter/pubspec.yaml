@@ -1,0 +1,17 @@
+name: mapstyler_sld_adapter
+description: SLD adapter for the mapstyler ecosystem. Maps flutter_map_sld types to and from mapstyler_style types.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+dependencies:
+  mapstyler_style:
+    path: ../mapstyler_style
+  flutter_map_sld: ^0.5.0
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^4.0.0
