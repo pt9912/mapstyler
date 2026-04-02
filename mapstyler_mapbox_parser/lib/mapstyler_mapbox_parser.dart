@@ -1,3 +1,16 @@
+/// Mapbox GL Style adapter for the mapstyler ecosystem.
+///
+/// Converts Mapbox GL Style JSON into mapstyler_style types and back.
+/// The underlying Mapbox parser (`mapbox4dart`) is an implementation
+/// detail and not exposed.
+///
+/// ```dart
+/// import 'package:mapstyler_mapbox_parser/mapstyler_mapbox_parser.dart';
+/// import 'package:mapstyler_style/mapstyler_style.dart';
+///
+/// final adapter = MapboxStyleAdapter();
+/// final result = await adapter.readStyle(mapboxJson);
+/// ```
 library mapstyler_mapbox_parser;
 
-// TODO: Implement Mapbox GL Style JSON ↔ mapstyler_style conversion
+export 'src/mapbox_style_adapter.dart';
