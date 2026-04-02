@@ -18,24 +18,30 @@ import 'package:flutter_map/flutter_map.dart';
 /// Löst: errno 24 (Verbindungslimit), leere Flächen beim Zoomen,
 /// langsames Nachladen ohne Disk-Cache.
 class CachingTileProvider extends TileProvider {
-  CachingTileProvider({required this.cacheDir}) {
-    _dio = Dio(BaseOptions(
+  CachingTileProvider({required this.cacheDir});
+
+  final Directory cacheDir;
+
+  // Lazy + wiederherstellbar: flutter_map's TileLayer ruft dispose()
+  // auf wenn der Layer aus dem Widget-Tree entfernt wird. Danach muss
+  // der Dio-Client bei Bedarf neu erstellt werden koennen.
+  Dio? _dio;
+  Dio get _client => _dio ??= _createDio();
+
+  Dio _createDio() {
+    final dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       responseType: ResponseType.bytes,
       headers: {'User-Agent': 'dev.mapstyler.demo'},
     ));
-    (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       return HttpClient()
         ..maxConnectionsPerHost = _maxConcurrent
-        // Idle-Verbindungen früh schließen, bevor der Server sie droppt.
-        // OSM schließt Keep-Alive-Verbindungen aggressiv.
         ..idleTimeout = const Duration(seconds: 5);
     };
+    return dio;
   }
-
-  final Directory cacheDir;
-  late final Dio _dio;
 
   // Download-Throttle: begrenzt gleichzeitige Netzwerk-Requests.
   int _active = 0;
@@ -69,7 +75,7 @@ class CachingTileProvider extends TileProvider {
     const maxAttempts = 3;
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        final response = await _dio.get<List<int>>(url);
+        final response = await _client.get<List<int>>(url);
         return response.data!;
       } on DioException catch (e) {
         final isRetryable = e.error is HttpException ||
@@ -94,7 +100,8 @@ class CachingTileProvider extends TileProvider {
 
   @override
   void dispose() {
-    _dio.close();
+    _dio?.close();
+    _dio = null;
     for (final c in _waitQueue) {
       c.completeError(StateError('Provider disposed'));
     }
