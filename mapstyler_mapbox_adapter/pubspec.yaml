@@ -1,6 +1,7 @@
 name: mapstyler_mapbox_adapter
 description: Mapbox GL Style adapter for the mapstyler ecosystem. Converts Mapbox styles to and from mapstyler_style types.
 version: 0.1.0
+repository: https://github.com/pt9912/mapstyler
 publish_to: none
 resolution: workspace
 

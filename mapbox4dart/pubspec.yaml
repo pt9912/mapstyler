@@ -1,6 +1,7 @@
 name: mapbox4dart
 description: Pure Dart codec and object model for Mapbox GL Style JSON files.
 version: 0.1.0
+repository: https://github.com/pt9912/mapstyler
 publish_to: none
 resolution: workspace
 
