@@ -1,0 +1,30 @@
+name: mapstyler_demo
+description: Desktop demo app that exercises every package in the mapstyler workspace.
+publish_to: 'none'
+version: 1.0.0+1
+resolution: workspace
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.0.0
+  flutter_map: ^7.0.0
+  flutter_mapstyler: ^0.1.0
+  latlong2: ^0.9.1
+  mapbox4dart: ^0.1.0
+  mapstyler_mapbox_adapter: ^0.1.0
+  mapstyler_qml_adapter: ^0.1.0
+  mapstyler_sld_adapter: ^0.1.0
+  mapstyler_style: ^0.1.0
+  qml4dart: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -12,9 +12,9 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# Copy workspace pubspec, exclude Flutter package (requires Flutter SDK)
+# Copy workspace pubspec, exclude Flutter workspace members
 COPY pubspec.yaml pubspec.yaml
-RUN sed -i '/flutter_mapstyler/d' pubspec.yaml
+RUN sed -i '/flutter_mapstyler/d;/demo\/mapstyler_demo/d' pubspec.yaml
 
 # Copy package pubspecs for dependency caching
 COPY mapstyler_style/pubspec.yaml mapstyler_style/pubspec.yaml
@@ -450,18 +450,20 @@ COPY mapstyler_sld_adapter/pubspec.yaml mapstyler_sld_adapter/pubspec.yaml
 COPY qml4dart/pubspec.yaml qml4dart/pubspec.yaml
 COPY mapstyler_qml_adapter/pubspec.yaml mapstyler_qml_adapter/pubspec.yaml
 COPY flutter_mapstyler/pubspec.yaml flutter_mapstyler/pubspec.yaml
+COPY demo/mapstyler_demo/pubspec.yaml demo/mapstyler_demo/pubspec.yaml
 
 # Placeholder libs so pub get can resolve
 RUN mkdir -p mapstyler_style/lib mapbox4dart/lib mapstyler_mapbox_adapter/lib \
     mapstyler_sld_adapter/lib qml4dart/lib mapstyler_qml_adapter/lib \
-    flutter_mapstyler/lib \
+    flutter_mapstyler/lib demo/mapstyler_demo/lib \
     && touch mapstyler_style/lib/mapstyler_style.dart \
     && touch mapbox4dart/lib/mapbox4dart.dart \
     && touch mapstyler_mapbox_adapter/lib/mapstyler_mapbox_adapter.dart \
     && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart \
     && touch qml4dart/lib/qml4dart.dart \
     && touch mapstyler_qml_adapter/lib/mapstyler_qml_adapter.dart \
-    && touch flutter_mapstyler/lib/flutter_mapstyler.dart
+    && touch flutter_mapstyler/lib/flutter_mapstyler.dart \
+    && touch demo/mapstyler_demo/lib/main.dart
 
 RUN flutter pub get
 
@@ -473,6 +475,7 @@ COPY mapstyler_sld_adapter/ mapstyler_sld_adapter/
 COPY qml4dart/ qml4dart/
 COPY mapstyler_qml_adapter/ mapstyler_qml_adapter/
 COPY flutter_mapstyler/ flutter_mapstyler/
+COPY demo/mapstyler_demo/ demo/mapstyler_demo/
 
 # Analyze
 FROM flutter-base AS flutter-analyze
@@ -522,3 +525,30 @@ RUN awk -F'[,:]' -v min="$COVERAGE_MIN" '\
 FROM flutter-base AS flutter-publish-check
 WORKDIR /app/flutter_mapstyler
 RUN flutter pub publish --dry-run
+
+## ---------------------------------------------------------------------------
+## Demo app: demo/mapstyler_demo
+## ---------------------------------------------------------------------------
+FROM flutter-base AS demo-analyze
+WORKDIR /app/demo/mapstyler_demo
+RUN flutter analyze
+
+FROM flutter-base AS demo-test
+WORKDIR /app/demo/mapstyler_demo
+RUN flutter test
+
+FROM flutter-base AS demo-linux-build
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    clang \
+    cmake \
+    libgtk-3-dev \
+    liblzma-dev \
+    ninja-build \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app/demo/mapstyler_demo
+RUN flutter config --enable-linux-desktop
+RUN flutter build linux
+RUN tar -czf /mapstyler_demo-linux-bundle.tar.gz -C build/linux/x64/release bundle
+ENTRYPOINT ["cat", "/mapstyler_demo-linux-bundle.tar.gz"]

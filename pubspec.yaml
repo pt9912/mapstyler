@@ -12,3 +12,4 @@ workspace:
   - qml4dart
   - mapstyler_qml_adapter
   - flutter_mapstyler
+  - demo/mapstyler_demo
