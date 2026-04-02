@@ -1,38 +1,58 @@
 import 'package:mapstyler_style/mapstyler_style.dart';
-import 'package:qml4dart/qml4dart.dart';
+import 'package:qml4dart/qml4dart.dart' as qml;
 
 import 'qml_to_mapstyler.dart' as read;
 import 'mapstyler_to_qml.dart' as write;
 
-/// [StyleParser] implementation for QGIS QML via [qml4dart].
+/// Parses QGIS QML XML into mapstyler [Style] objects and writes
+/// mapstyler styles back to QML XML.
+///
+/// Internally uses `qml4dart` for XML parsing and serialization — that
+/// dependency is not exposed in the public API.
 ///
 /// ```dart
-/// final codec = Qml4DartCodec();
 /// final parser = QmlStyleParser();
 ///
-/// // QML → mapstyler_style
-/// final parseResult = codec.parseString(qmlXml);
-/// if (parseResult case ReadQmlSuccess(:final document)) {
-///   final result = await parser.readStyle(document);
-/// }
+/// // Read QML XML → mapstyler Style
+/// final result = await parser.readStyle(qmlXml);
 ///
-/// // mapstyler_style → QML
+/// // Write Style → QML XML
 /// final writeResult = await parser.writeStyle(style);
 /// if (writeResult case WriteStyleSuccess(:final output)) {
-///   final qmlResult = codec.encodeString(output);
+///   print(output); // QML XML string
 /// }
 /// ```
-class QmlStyleParser implements StyleParser<QmlDocument> {
+class QmlStyleParser {
   const QmlStyleParser();
 
-  @override
+  /// Human-readable name for this parser.
   String get title => 'QML';
 
-  @override
-  Future<ReadStyleResult> readStyle(QmlDocument input) async =>
-      read.convertDocument(input);
+  /// Parses a QML XML string and converts it to a mapstyler [Style].
+  Future<ReadStyleResult> readStyle(String qmlXml) async {
+    final parseResult = qml.Qml4DartCodec().parseString(qmlXml);
+    return switch (parseResult) {
+      qml.ReadQmlSuccess(:final document) => read.convertDocument(document),
+      qml.ReadQmlFailure(:final message) =>
+        ReadStyleFailure(errors: [message]),
+    };
+  }
 
-  @override
-  Future<WriteStyleResult<QmlDocument>> writeStyle(Style style) async =>
-      write.convertStyle(style);
+  /// Converts a mapstyler [Style] to a QML XML string.
+  Future<WriteStyleResult<String>> writeStyle(Style style) async {
+    final convertResult = write.convertStyle(style);
+    return switch (convertResult) {
+      WriteStyleSuccess(:final output, :final warnings) => () {
+          final xmlResult = qml.Qml4DartCodec().encodeString(output);
+          return switch (xmlResult) {
+            qml.WriteQmlSuccess(:final xml) =>
+              WriteStyleSuccess<String>(output: xml, warnings: warnings),
+            qml.WriteQmlFailure(:final message) =>
+              WriteStyleFailure<String>(errors: [message]),
+          };
+        }(),
+      WriteStyleFailure(:final errors) =>
+        WriteStyleFailure<String>(errors: errors),
+    };
+  }
 }

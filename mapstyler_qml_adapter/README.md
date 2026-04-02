@@ -1,14 +1,14 @@
 # mapstyler_qml_adapter
 
-Bidirectional adapter between [qml4dart](https://github.com/pt9912/mapstyler/tree/main/qml4dart) QML types and [mapstyler_style](https://github.com/pt9912/mapstyler/tree/main/mapstyler_style) — converts QGIS QML styles to the common GeoStyler-based type system and back.
+Converts QGIS QML XML into [mapstyler_style](https://github.com/pt9912/mapstyler/tree/main/mapstyler_style) types and back. Uses [qml4dart](https://github.com/pt9912/mapstyler/tree/main/qml4dart) internally for XML parsing — that dependency is not exposed in the public API.
 
 Part of the [mapstyler](https://github.com/pt9912/mapstyler) ecosystem.
 
 ## Features
 
-- **QmlStyleParser** — implements the `StyleParser<QmlDocument>` interface for full read/write support.
-- **QML read (QML → mapstyler)** — singleSymbol, categorizedSymbol, graduatedSymbol, and RuleRenderer (incl. nested rules).
-- **QML write (mapstyler → QML)** — converts rules back to QML with automatic renderer type selection.
+- **QmlStyleParser** — parses QML XML directly into mapstyler types and writes mapstyler styles back to QML XML.
+- **QML read** — singleSymbol, categorizedSymbol, graduatedSymbol, and RuleRenderer (incl. nested rules).
+- **QML write** — converts rules back to QML XML with automatic renderer type selection.
 - **Symbol layers** — SimpleFill, SimpleLine, SimpleMarker, SvgMarker, RasterFill.
 - **Filters** — comparison and combination filter conversion in both directions.
 - **Scale visibility** — document-level and rule-level scale denominators.
@@ -20,25 +20,16 @@ Pure Dart — no Flutter dependency.
 ## Usage
 
 ```dart
-import 'package:qml4dart/qml4dart.dart';
 import 'package:mapstyler_qml_adapter/mapstyler_qml_adapter.dart';
+import 'package:mapstyler_style/mapstyler_style.dart';
 
-// Parse QML XML, then convert to mapstyler types.
-final codec = Qml4DartCodec();
-final parseResult = codec.parseString(qmlXml);
+final parser = QmlStyleParser();
+final result = await parser.readStyle(qmlXml);
 
-if (parseResult case ReadQmlSuccess(:final document)) {
-  final parser = QmlStyleParser();
-  final result = await parser.readStyle(document);
-
-  if (result case ReadStyleSuccess(:final output, :final warnings)) {
-    print('Style: ${output.name}');
-    for (final rule in output.rules) {
-      print('  ${rule.name}: ${rule.symbolizers.length} symbolizers');
-    }
-    for (final w in warnings) {
-      print('  Warning: $w');
-    }
+if (result case ReadStyleSuccess(:final output, :final warnings)) {
+  print('Style: ${output.name}');
+  for (final rule in output.rules) {
+    print('  ${rule.name}: ${rule.symbolizers.length} symbolizers');
   }
 }
 ```
@@ -46,45 +37,11 @@ if (parseResult case ReadQmlSuccess(:final document)) {
 ### Writing QML
 
 ```dart
-import 'package:mapstyler_style/mapstyler_style.dart';
-import 'package:mapstyler_qml_adapter/mapstyler_qml_adapter.dart';
-
-const style = Style(
-  name: 'Land use',
-  rules: [
-    Rule(
-      name: 'Residential',
-      filter: ComparisonFilter(
-        operator: ComparisonOperator.eq,
-        property: LiteralExpression('landuse'),
-        value: LiteralExpression<Object>('residential'),
-      ),
-      symbolizers: [
-        FillSymbolizer(
-          color: LiteralExpression('#ffcc00'),
-          opacity: LiteralExpression(0.5),
-        ),
-      ],
-    ),
-  ],
-);
-
-final parser = QmlStyleParser();
 final result = await parser.writeStyle(style);
 
 if (result case WriteStyleSuccess(:final output)) {
-  final codec = Qml4DartCodec();
-  final qmlResult = codec.encodeString(output);
-  // → QGIS-importable QML XML
+  print(output); // QGIS-importable QML XML string
 }
-```
-
-### Low-level API
-
-```dart
-// Direct conversion without the async StyleParser wrapper:
-final readResult = convertDocument(qmlDocument);
-final writeResult = convertStyle(style);
 ```
 
 ### Color utilities

@@ -1,99 +1,59 @@
-import 'package:qml4dart/qml4dart.dart';
 import 'package:mapstyler_qml_adapter/mapstyler_qml_adapter.dart';
 import 'package:mapstyler_style/mapstyler_style.dart';
 
-/// Example: parse a QGIS QML style, convert to mapstyler types, modify it,
-/// and write it back to QML.
+/// Example: parse a QGIS QML style, convert to mapstyler types,
+/// and write it back to QML XML.
 void main() async {
-  // -- Read: QML → mapstyler_style ----------------------------------------
-  final style = _readQml(_categorizedQml);
+  final parser = QmlStyleParser();
 
-  // -- Inspect the result --------------------------------------------------
-  _printStyle(style);
+  // -- Read: QML XML → mapstyler Style ------------------------------------
+  print('--- QML → mapstyler_style ---');
+  final readResult = await parser.readStyle(_categorizedQml);
 
-  // -- Write: mapstyler_style → QML ---------------------------------------
-  _writeQml(style);
-
-  // -- Round-trip ----------------------------------------------------------
-  print('\n--- Round-trip ---');
-  final roundTripped = _roundTrip(_categorizedQml);
-  _printStyle(roundTripped);
-}
-
-// ---------------------------------------------------------------------------
-// Read direction
-// ---------------------------------------------------------------------------
-
-Style _readQml(String qmlXml) {
-  const codec = Qml4DartCodec();
-  final parseResult = codec.parseString(qmlXml);
-
-  switch (parseResult) {
-    case ReadQmlFailure(:final message):
-      throw Exception('QML parse error: $message');
-    case ReadQmlSuccess(:final document, :final warnings):
+  switch (readResult) {
+    case ReadStyleSuccess(:final output, :final warnings):
       for (final w in warnings) {
-        print('QML parse warning: $w');
+        print('  Warning: $w');
+      }
+      _printStyle(output);
+
+      // -- Write: mapstyler Style → QML XML --------------------------------
+      print('\n--- mapstyler_style → QML ---');
+      final writeResult = await parser.writeStyle(output);
+      if (writeResult case WriteStyleSuccess(:final output)) {
+        print(output); // QML XML string
       }
 
-      final result = convertDocument(document);
-      switch (result) {
-        case ReadStyleSuccess(:final output, warnings: final w):
-          for (final warning in w) {
-            print('Conversion warning: $warning');
-          }
-          return output;
-        case ReadStyleFailure(:final errors):
-          throw Exception('Conversion failed: $errors');
-      }
+    case ReadStyleFailure(:final errors):
+      print('  Failed: $errors');
   }
-}
 
-// ---------------------------------------------------------------------------
-// Write direction
-// ---------------------------------------------------------------------------
-
-void _writeQml(Style style) {
-  print('\n--- Write: mapstyler_style to QML ---');
-  final result = convertStyle(style);
-
-  switch (result) {
-    case WriteStyleSuccess(:final output, :final warnings):
-      for (final w in warnings) {
-        print('Write warning: $w');
-      }
-      const codec = Qml4DartCodec();
-      final xmlResult = codec.encodeString(output);
-      if (xmlResult case WriteQmlSuccess(:final xml)) {
-        print(xml);
-      }
-    case WriteStyleFailure(:final errors):
-      print('Write failed: $errors');
+  // -- Build from code and write ------------------------------------------
+  print('\n--- From code → QML ---');
+  const style = Style(
+    rules: [
+      Rule(
+        name: 'Forests',
+        filter: ComparisonFilter(
+          operator: ComparisonOperator.eq,
+          property: LiteralExpression('landuse'),
+          value: LiteralExpression<Object>('forest'),
+        ),
+        symbolizers: [
+          FillSymbolizer(
+            color: LiteralExpression('#228B22'),
+            opacity: LiteralExpression(0.7),
+            outlineColor: LiteralExpression('#006400'),
+            outlineWidth: LiteralExpression(1.0),
+          ),
+        ],
+      ),
+    ],
+  );
+  final result = await parser.writeStyle(style);
+  if (result case WriteStyleSuccess(:final output)) {
+    print(output);
   }
-}
-
-// ---------------------------------------------------------------------------
-// Round-trip
-// ---------------------------------------------------------------------------
-
-Style _roundTrip(String qmlXml) {
-  // QML XML → qml4dart → mapstyler_style → qml4dart → QML XML → repeat
-  const codec = Qml4DartCodec();
-
-  // Step 1: QML → mapstyler
-  final doc1 = (codec.parseString(qmlXml) as ReadQmlSuccess).document;
-  final style =
-      (convertDocument(doc1) as ReadStyleSuccess).output;
-
-  // Step 2: mapstyler → QML
-  final doc2 =
-      (convertStyle(style) as WriteStyleSuccess<QmlDocument>).output;
-
-  // Step 3: QML → mapstyler again
-  final restored =
-      (convertDocument(doc2) as ReadStyleSuccess).output;
-
-  return restored;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,8 +61,7 @@ Style _roundTrip(String qmlXml) {
 // ---------------------------------------------------------------------------
 
 void _printStyle(Style style) {
-  print('Style: ${style.name ?? '(unnamed)'}');
-  print('Rules: ${style.rules.length}');
+  print('Style: ${style.name ?? "(unnamed)"}');
   for (final rule in style.rules) {
     final parts = <String>[
       rule.name ?? '(unnamed)',
@@ -112,7 +71,6 @@ void _printStyle(Style style) {
         'scale ${rule.scaleDenominator!.min}–${rule.scaleDenominator!.max}',
     ];
     print('  ${parts.join(' | ')}');
-
     for (final sym in rule.symbolizers) {
       print('    ${sym.kind}');
     }
@@ -120,10 +78,9 @@ void _printStyle(Style style) {
 }
 
 // ---------------------------------------------------------------------------
-// Sample QML data
+// Sample QML XML
 // ---------------------------------------------------------------------------
 
-/// Categorized fill style with scale-based visibility.
 const _categorizedQml = '''
 <qgis version="3.28.0" hasScaleBasedVisibilityFlag="1"
       maxScale="1000" minScale="100000">

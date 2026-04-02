@@ -1,10 +1,22 @@
 import 'package:mapstyler_qml_adapter/mapstyler_qml_adapter.dart';
+import 'package:mapstyler_qml_adapter/src/qml_to_mapstyler.dart'
+    as read_adapter;
+import 'package:mapstyler_qml_adapter/src/mapstyler_to_qml.dart'
+    as write_adapter;
 import 'package:mapstyler_style/mapstyler_style.dart' as ms;
 import 'package:qml4dart/qml4dart.dart' as qml;
 import 'package:test/test.dart';
 
 void main() {
   const parser = QmlStyleParser();
+
+  /// Internal helper: convert QmlDocument → ReadStyleResult.
+  ms.ReadStyleResult readDoc(qml.QmlDocument doc) =>
+      read_adapter.convertDocument(doc);
+
+  /// Internal helper: convert Style → WriteStyleResult<QmlDocument>.
+  ms.WriteStyleResult<qml.QmlDocument> writeDoc(ms.Style style) =>
+      write_adapter.convertStyle(style);
 
   // ---------------------------------------------------------------------------
   // Color utilities
@@ -64,7 +76,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       expect(result, isA<ms.ReadStyleSuccess>());
       final style = (result as ms.ReadStyleSuccess).output;
 
@@ -112,7 +124,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
       final line = style.rules.first.symbolizers.first as ms.LineSymbolizer;
 
@@ -150,7 +162,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
       final mark = style.rules.first.symbolizers.first as ms.MarkSymbolizer;
 
@@ -192,7 +204,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
       final icon = style.rules.first.symbolizers.first as ms.IconSymbolizer;
 
@@ -248,7 +260,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
 
       // industrial has render=false → skipped. Empty value → no filter.
@@ -300,7 +312,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
 
       expect(style.rules, hasLength(1));
@@ -353,7 +365,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
 
       // Disabled rule skipped.
@@ -402,7 +414,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
 
       expect(style.rules, hasLength(1));
@@ -436,7 +448,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
 
       expect(style.rules.first.scaleDenominator?.min, 1000);
@@ -454,7 +466,7 @@ void main() {
           ],
         ),
       );
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final success = result as ms.ReadStyleSuccess;
       expect(success.warnings, anyElement(contains('symbol 99 not found')));
       expect(success.output.rules, isEmpty);
@@ -471,7 +483,7 @@ void main() {
           ],
         ),
       );
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final success = result as ms.ReadStyleSuccess;
       expect(success.warnings, anyElement(contains('symbol 99 not found')));
     });
@@ -480,7 +492,7 @@ void main() {
       final doc = qml.QmlDocument(
         renderer: const qml.QmlRenderer(type: qml.QmlRendererType.unknown),
       );
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final success = result as ms.ReadStyleSuccess;
       expect(success.warnings, anyElement(contains('Unknown renderer type')));
     });
@@ -495,7 +507,7 @@ void main() {
           ],
         ),
       );
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final success = result as ms.ReadStyleSuccess;
       expect(success.warnings, anyElement(contains('symbol 99 not found')));
     });
@@ -517,7 +529,7 @@ void main() {
           ],
         ),
       );
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final success = result as ms.ReadStyleSuccess;
       expect(success.warnings, anyElement(contains('Could not parse filter')));
     });
@@ -545,7 +557,7 @@ void main() {
           },
         ),
       );
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final success = result as ms.ReadStyleSuccess;
       expect(success.warnings, anyElement(contains('RasterFill')));
       expect(success.warnings, anyElement(contains('Unknown symbol layer')));
@@ -580,7 +592,7 @@ void main() {
             },
           ),
         );
-        final result = await parser.readStyle(doc);
+        final result = readDoc(doc);
         final style = (result as ms.ReadStyleSuccess).output;
         final mark = style.rules.first.symbolizers.first as ms.MarkSymbolizer;
         expect(mark.wellKnownName, entry.value, reason: 'QGIS ${entry.key}');
@@ -615,7 +627,7 @@ void main() {
             ],
           ),
         );
-        final result = await parser.readStyle(doc);
+        final result = readDoc(doc);
         final style = (result as ms.ReadStyleSuccess).output;
         final f = style.rules.first.filter as ms.ComparisonFilter;
         expect(f.operator, entry.value, reason: entry.key);
@@ -646,7 +658,7 @@ void main() {
         ),
       );
 
-      final result = await parser.readStyle(doc);
+      final result = readDoc(doc);
       final style = (result as ms.ReadStyleSuccess).output;
 
       expect(style.rules.first.symbolizers, hasLength(2));
@@ -677,7 +689,7 @@ void main() {
         ],
       );
 
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       expect(result, isA<ms.WriteStyleSuccess<qml.QmlDocument>>());
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
@@ -723,7 +735,7 @@ void main() {
         ],
       );
 
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
 
@@ -759,7 +771,7 @@ void main() {
         ],
       );
 
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
       final layer = doc.renderer.symbols['0']!.layers.first;
@@ -788,7 +800,7 @@ void main() {
         ],
       );
 
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
       final layer = doc.renderer.symbols['0']!.layers.first;
@@ -810,7 +822,7 @@ void main() {
         ],
       );
 
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final success = result as ms.WriteStyleSuccess<qml.QmlDocument>;
       expect(
         success.warnings,
@@ -828,7 +840,7 @@ void main() {
           ),
         ],
       );
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final success = result as ms.WriteStyleSuccess<qml.QmlDocument>;
       expect(
         success.warnings,
@@ -854,7 +866,7 @@ void main() {
           ),
         ],
       );
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
       final props = doc.renderer.symbols['0']!.layers.first.properties;
@@ -878,7 +890,7 @@ void main() {
             ),
           ],
         );
-        final result = await parser.writeStyle(style);
+        final result = writeDoc(style);
         final doc =
             (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
         final name = doc.renderer.symbols['0']!.layers.first.properties['name'];
@@ -925,7 +937,7 @@ void main() {
           ),
         ],
       );
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
 
@@ -951,7 +963,7 @@ void main() {
           ),
         ],
       );
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
 
@@ -976,7 +988,7 @@ void main() {
         ],
       );
 
-      final result = await parser.writeStyle(style);
+      final result = writeDoc(style);
       final doc =
           (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
 
@@ -1012,16 +1024,16 @@ void main() {
       );
 
       // QML → mapstyler
-      final readResult = await parser.readStyle(originalDoc);
+      final readResult = readDoc(originalDoc);
       final style = (readResult as ms.ReadStyleSuccess).output;
 
       // mapstyler → QML
-      final writeResult = await parser.writeStyle(style);
+      final writeResult = writeDoc(style);
       final roundTripDoc =
           (writeResult as ms.WriteStyleSuccess<qml.QmlDocument>).output;
 
       // QML → mapstyler again
-      final readResult2 = await parser.readStyle(roundTripDoc);
+      final readResult2 = readDoc(roundTripDoc);
       final style2 = (readResult2 as ms.ReadStyleSuccess).output;
 
       // Compare
@@ -1044,6 +1056,46 @@ void main() {
   group('QmlStyleParser', () {
     test('title is QML', () {
       expect(parser.title, 'QML');
+    });
+
+    test('readStyle parses QML XML string', () async {
+      const qmlXml = '''
+<qgis version="3.28.0">
+  <renderer-v2 type="singleSymbol">
+    <symbols>
+      <symbol type="fill" name="0" alpha="1">
+        <layer class="SimpleFill" enabled="1" locked="0" pass="0">
+          <Option type="Map">
+            <Option name="color" value="255,0,0,255" type="QString"/>
+          </Option>
+        </layer>
+      </symbol>
+    </symbols>
+  </renderer-v2>
+</qgis>
+''';
+      final result = await parser.readStyle(qmlXml);
+      expect(result, isA<ms.ReadStyleSuccess>());
+      final style = (result as ms.ReadStyleSuccess).output;
+      expect(style.rules, hasLength(1));
+      expect(style.rules.first.symbolizers.first, isA<ms.FillSymbolizer>());
+    });
+
+    test('writeStyle produces QML XML string', () async {
+      const style = ms.Style(
+        rules: [
+          ms.Rule(
+            symbolizers: [
+              ms.FillSymbolizer(color: ms.LiteralExpression('#ff0000')),
+            ],
+          ),
+        ],
+      );
+      final result = await parser.writeStyle(style);
+      expect(result, isA<ms.WriteStyleSuccess<String>>());
+      final xml = (result as ms.WriteStyleSuccess<String>).output;
+      expect(xml, contains('<qgis'));
+      expect(xml, contains('SimpleFill'));
     });
   });
 }
