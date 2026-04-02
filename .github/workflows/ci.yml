@@ -1,0 +1,178 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # mapstyler_style
+  # ---------------------------------------------------------------------------
+  style-analyze:
+    name: Style – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target style-analyze .
+
+  style-test:
+    name: Style – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target style-test .
+
+  style-coverage:
+    name: Style – Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target style-coverage-check --no-cache-filter style-coverage --progress=plain .
+
+  style-doc:
+    name: Style – Doc
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target style-doc .
+
+  # ---------------------------------------------------------------------------
+  # mapstyler_mapbox_parser
+  # ---------------------------------------------------------------------------
+  mapbox-analyze:
+    name: Mapbox – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target mapbox-analyze .
+
+  mapbox-test:
+    name: Mapbox – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target mapbox-test .
+
+  mapbox-coverage:
+    name: Mapbox – Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target mapbox-coverage-check --no-cache-filter mapbox-coverage --progress=plain .
+
+  # ---------------------------------------------------------------------------
+  # mapstyler_sld_adapter
+  # ---------------------------------------------------------------------------
+  sld-analyze:
+    name: SLD – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target sld-analyze .
+
+  sld-test:
+    name: SLD – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target sld-test .
+
+  sld-coverage:
+    name: SLD – Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target sld-coverage-check --no-cache-filter sld-coverage --progress=plain .
+
+  # ---------------------------------------------------------------------------
+  # qml4dart
+  # ---------------------------------------------------------------------------
+  qml-analyze:
+    name: QML – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target qml-analyze .
+
+  qml-test:
+    name: QML – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target qml-test .
+
+  qml-coverage:
+    name: QML – Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target qml-coverage-check --no-cache-filter qml-coverage --progress=plain .
+
+  # ---------------------------------------------------------------------------
+  # mapstyler_qml_adapter
+  # ---------------------------------------------------------------------------
+  qml-adapter-analyze:
+    name: QML Adapter – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target qml-adapter-analyze .
+
+  qml-adapter-test:
+    name: QML Adapter – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target qml-adapter-test .
+
+  # ---------------------------------------------------------------------------
+  # flutter_mapstyler
+  # ---------------------------------------------------------------------------
+  flutter-analyze:
+    name: Flutter – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target flutter-analyze .
+
+  flutter-test:
+    name: Flutter – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target flutter-test .
+
+  flutter-coverage:
+    name: Flutter – Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target flutter-coverage-check --no-cache-filter flutter-coverage --progress=plain .

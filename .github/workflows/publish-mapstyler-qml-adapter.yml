@@ -1,0 +1,20 @@
+name: Publish mapstyler_qml_adapter to pub.dev
+
+on:
+  push:
+    tags:
+      - 'mapstyler_qml_adapter-v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish mapstyler_qml_adapter
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      environment: pub.dev
+      working-directory: mapstyler_qml_adapter
