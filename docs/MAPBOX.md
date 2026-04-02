@@ -1,323 +1,447 @@
-# mapbox4dart — Mapbox GL Style JSON in Dart
+# Mapbox GL Spezifikation für `mapbox4dart` und `mapstyler_mapbox_adapter`
 
-Eigenständiges Pure-Dart-Package für das Lesen, Modellieren und Schreiben von Mapbox GL Style JSON (Version 8). Analog zu `qml4dart` für QGIS QML.
+Dieses Dokument ist keine Bestandsbeschreibung, sondern die verbindliche
+Implementierungsspezifikation für die noch ausstehenden Mapbox-Pakete im
+Workspace.
 
-## Ausgangslage
+## Zielbild
 
-Mapbox GL Style JSON (v8) ist das dominante Style-Format für Webkarten (Mapbox, MapLibre GL JS, MapLibre Native, react-map-gl, flutter_map mit vector tiles). Es gibt kein existierendes Pure-Dart-Package, das ein typisiertes Objektmodell für Mapbox Styles bereitstellt.
+Die Mapbox-Unterstützung wird bewusst in zwei Pakete getrennt:
 
+```text
+Mapbox GL Style JSON
+  -> mapbox4dart
+     (Codec + eigenes Mapbox-Objektmodell)
+  -> mapstyler_mapbox_adapter
+     (Transformation Mapbox -> mapstyler_style)
+  -> mapstyler_style
 ```
-Mapbox GL JSON ──→ mapbox4dart (Objektmodell + Codec) ──→ mapstyler_mapbox_adapter
-                                                              ↓
-                                                        mapstyler_style
-```
 
-## Mapbox GL Style Spec (v8) — Überblick
+`mapbox4dart` besitzt ein eigenes Objektmodell für Mapbox-Styles. Es hängt
+nicht von `mapstyler_style` ab.
 
-### Root-Struktur
+`mapstyler_mapbox_adapter` hängt von `mapbox4dart` und `mapstyler_style` ab
+und übernimmt ausschließlich die semantische Transformation.
 
-```json
-{
-  "version": 8,
-  "name": "My Style",
-  "metadata": {},
-  "sources": {
-    "openmaptiles": { "type": "vector", "url": "..." }
-  },
-  "sprite": "https://...",
-  "glyphs": "https://.../{fontstack}/{range}.pbf",
-  "layers": [ ... ]
+Hinweis zum aktuellen Repo-Stand:
+Im Workspace existiert derzeit ein Platzhalter-Package
+`mapstyler_mapbox_parser`. Fachlich ist hiermit das in diesem Dokument
+beschriebene Adapter-Package gemeint, bis das Naming vereinheitlicht ist.
+
+## Paketgrenzen
+
+| Verantwortung | `mapbox4dart` | `mapstyler_mapbox_adapter` |
+|---|---|---|
+| JSON lesen/schreiben | `ja` | `nein` |
+| Eigenes Mapbox-Objektmodell | `ja` | `nein` |
+| Unknown-/Pass-through-Erhalt | `ja` | `nein` |
+| Farb-Parsing und -Normalisierung | `ja` | `nein` |
+| Mapbox-Filter interpretieren | `nein` | `ja` |
+| Mapbox-Expressions interpretieren | `nein` | `ja` |
+| Layer -> `mapstyler_style.Symbolizer` | `nein` | `ja` |
+| Zoom -> `ScaleDenominator` | `nein` | `ja` |
+| Rückschreiben von `Style` nach Mapbox | `nein` | `ja` |
+
+## `mapbox4dart` MVP
+
+### Zweck
+
+`mapbox4dart` liest und schreibt Mapbox GL Style JSON v8 als unverfälschtes,
+Mapbox-nahes Modell. Das Package bewertet keine Expressions fachlich und mappt
+nichts nach `mapstyler_style`.
+
+### Öffentliche API
+
+```dart
+library mapbox4dart;
+
+final class MapboxStyleCodec {
+  const MapboxStyleCodec();
+
+  ReadMapboxResult readString(String input);
+  ReadMapboxResult readJsonObject(Map<String, Object?> input);
+
+  WriteMapboxResult writeString(MapboxStyle style);
+  Map<String, Object?> writeJsonObject(MapboxStyle style);
 }
 ```
 
-| Feld | Typ | Beschreibung |
-|---|---|---|
-| `version` | `int` | Immer `8` |
-| `name` | `String?` | Human-readable Name |
-| `metadata` | `Map?` | Beliebige Metadaten (u.a. `geostyler:ref`) |
-| `sources` | `Map<String, Source>` | Datenquellen (vector, raster, geojson, ...) |
-| `sprite` | `String?` | URL zum Sprite-Atlas |
-| `glyphs` | `String?` | URL-Template für Glyphen (Fonts) |
-| `layers` | `List<Layer>` | Geordnete Liste der Style-Layer |
-| `center` | `[lng, lat]?` | Initiale Kartenposition |
-| `zoom` | `double?` | Initiale Zoomstufe |
-| `bearing` | `double?` | Initiale Rotation |
-| `pitch` | `double?` | Initialer Neigungswinkel |
+```dart
+sealed class ReadMapboxResult {
+  const ReadMapboxResult();
+}
 
-### Source-Typen
+final class ReadMapboxSuccess extends ReadMapboxResult {
+  final MapboxStyle output;
+  final List<String> warnings;
+  const ReadMapboxSuccess({
+    required this.output,
+    this.warnings = const [],
+  });
+}
 
-| Typ | Beschreibung |
+final class ReadMapboxFailure extends ReadMapboxResult {
+  final List<String> errors;
+  const ReadMapboxFailure({required this.errors});
+}
+
+sealed class WriteMapboxResult {
+  const WriteMapboxResult();
+}
+
+final class WriteMapboxSuccess extends WriteMapboxResult {
+  final String output;
+  final List<String> warnings;
+  const WriteMapboxSuccess({
+    required this.output,
+    this.warnings = const [],
+  });
+}
+
+final class WriteMapboxFailure extends WriteMapboxResult {
+  final List<String> errors;
+  const WriteMapboxFailure({required this.errors});
+}
+```
+
+### Objektmodell
+
+```dart
+final class MapboxStyle {
+  final int version;
+  final String? name;
+  final Map<String, Object?> metadata;
+  final Map<String, MapboxSource> sources;
+  final String? sprite;
+  final String? glyphs;
+  final List<MapboxLayer> layers;
+  final List<double>? center; // [lng, lat]
+  final double? zoom;
+  final double? bearing;
+  final double? pitch;
+  final Map<String, Object?> extra;
+}
+
+enum MapboxSourceType {
+  vector,
+  raster,
+  rasterDem,
+  geojson,
+  image,
+  video,
+  unknown,
+}
+
+final class MapboxSource {
+  final MapboxSourceType type;
+  final String rawType;
+  final Map<String, Object?> properties;
+}
+
+enum MapboxLayerType {
+  background,
+  fill,
+  line,
+  circle,
+  symbol,
+  raster,
+  fillExtrusion,
+  hillshade,
+  heatmap,
+  sky,
+  unknown,
+}
+
+final class MapboxLayer {
+  final String id;
+  final MapboxLayerType type;
+  final String rawType;
+  final String? source;
+  final String? sourceLayer;
+  final List<Object?>? filter;
+  final Map<String, Object?> paint;
+  final Map<String, Object?> layout;
+  final double? minzoom;
+  final double? maxzoom;
+  final Map<String, Object?> metadata;
+  final Map<String, Object?> extra;
+}
+```
+
+### Modell-Regeln
+
+- Alle Klassen sind immutable und vergleichbar per `==`.
+- `version` muss beim Lesen exakt `8` sein, sonst `ReadMapboxFailure`.
+- `paint`, `layout`, `filter` und source-spezifische Felder bleiben Mapbox-nah
+  und werden nicht in Fachtypen zerlegt.
+- Unknown root fields landen in `MapboxStyle.extra`.
+- Unknown layer fields landen in `MapboxLayer.extra`.
+- Unknown source fields bleiben in `MapboxSource.properties`.
+- Unknown layer/source types werden nicht verworfen, sondern als
+  `unknown + rawType` erhalten.
+
+### Read/Write-Vertrag
+
+- Ziel ist semantischer Roundtrip, nicht byte-identischer Roundtrip.
+- Reihenfolge von `layers` bleibt erhalten.
+- Reihenfolge von `sources` und Map-Feldern soll beim Schreiben nach Möglichkeit
+  erhalten bleiben; sie ist aber kein API-Vertrag.
+- Unbekannte Felder müssen beim Roundtrip erhalten bleiben.
+- JSON, das strukturell kein Mapbox-v8-Style ist, führt zu `Failure`.
+- Typabweichungen in Pflichtfeldern führen zu `Failure`.
+- Typabweichungen in optionalen oder unbekannten Feldern dürfen als Warning plus
+  Ignorieren behandelt werden, aber nicht stillschweigend die Struktur brechen.
+
+### Unterstützter Scope in `mapbox4dart`
+
+| Bereich | MVP |
 |---|---|
-| `vector` | Vector Tiles (PBF) |
-| `raster` | Raster Tiles (PNG/JPEG) |
-| `raster-dem` | Höhenmodell-Tiles |
-| `geojson` | Inline GeoJSON oder URL |
-| `image` | Einzelbild mit Koordinaten |
-| `video` | Video mit Koordinaten |
+| Root-Felder `version`, `name`, `metadata`, `sources`, `sprite`, `glyphs`, `layers`, `center`, `zoom`, `bearing`, `pitch` | `ja` |
+| Source-Typen `vector`, `raster`, `raster-dem`, `geojson`, `image`, `video` | `ja` |
+| Layer-Typen `background`, `fill`, `line`, `circle`, `symbol`, `raster`, `fill-extrusion`, `hillshade`, `heatmap`, `sky` | `ja`, aber nur als Typ + Map-Felder |
+| Fachliche Interpretation von `filter` | `nein` |
+| Fachliche Interpretation von Expressions in `paint`/`layout` | `nein` |
 
-### Layer-Typen
+## `mapstyler_mapbox_adapter` MVP
 
-Jeder Layer hat: `id`, `type`, `source?`, `source-layer?`, `filter?`, `paint`, `layout`, `minzoom?`, `maxzoom?`, `metadata?`.
+### Zweck
 
-| Typ | Beschreibung | Paint-Eigenschaften (Auswahl) | Layout (Auswahl) |
-|---|---|---|---|
-| `background` | Hintergrund-Füllung | `background-color`, `background-opacity`, `background-pattern` | `visibility` |
-| `fill` | Polygon-Füllung | `fill-color`, `fill-opacity`, `fill-outline-color`, `fill-pattern`, `fill-antialias` | `visibility`, `fill-sort-key` |
-| `line` | Linien/Striche | `line-color`, `line-width`, `line-opacity`, `line-dasharray`, `line-blur`, `line-gap-width`, `line-offset` | `visibility`, `line-cap`, `line-join`, `line-miter-limit`, `line-round-limit`, `line-sort-key` |
-| `circle` | Punkt-Kreise | `circle-radius`, `circle-color`, `circle-opacity`, `circle-stroke-color`, `circle-stroke-width`, `circle-blur` | `visibility`, `circle-sort-key` |
-| `symbol` | Text + Icons | `text-color`, `text-opacity`, `text-halo-color`, `text-halo-width`, `icon-opacity`, `icon-color` | `text-field`, `text-font`, `text-size`, `text-rotate`, `icon-image`, `icon-size`, `icon-rotate`, `symbol-placement`, `symbol-spacing` |
-| `raster` | Raster-Tiles | `raster-opacity`, `raster-hue-rotate`, `raster-brightness-min`, `raster-brightness-max`, `raster-saturation`, `raster-contrast` | `visibility` |
-| `fill-extrusion` | 3D-Gebäude | `fill-extrusion-color`, `fill-extrusion-height`, `fill-extrusion-base` | `visibility` |
-| `hillshade` | Schummerung | `hillshade-illumination-direction`, `hillshade-shadow-color` | `visibility` |
-| `heatmap` | Heatmap | `heatmap-radius`, `heatmap-weight`, `heatmap-intensity`, `heatmap-color` | `visibility` |
+Der Adapter interpretiert `mapbox4dart`-Modelle und transformiert sie in
+`mapstyler_style.Style` und zurück.
 
-**Hinweis:** `fill-extrusion`, `hillshade`, `heatmap` und `sky` werden im Objektmodell als `MapboxLayer` mit `type: unknown` durchgereicht, aber nicht in typisierte Paint-Klassen zerlegt. Forward-kompatibel über `paint`/`layout` als `Map<String, dynamic>`.
+### Öffentliche API
 
-### Besonderheit: `symbol`-Layer
+Das Package implementiert das bestehende `StyleParser<String>`-Interface aus
+`mapstyler_style` und bietet zusätzlich typsichere Ein-/Ausgänge auf Basis von
+`MapboxStyle`.
 
-Ein `symbol`-Layer kann **gleichzeitig** Text und Icons enthalten:
-- `text-field` + `text-size` + `text-color` → Textdarstellung
-- `icon-image` + `icon-size` → Icondarstellung
-- `symbol-placement` ("point" / "line" / "line-center") gilt für beides
+```dart
+final class MapboxStyleAdapter implements StyleParser<String> {
+  const MapboxStyleAdapter({
+    this.codec = const MapboxStyleCodec(),
+  });
 
-Bei der Konvertierung nach mapstyler_style entsteht daraus ein `TextSymbolizer` und/oder ein `IconSymbolizer` — im selben Rule.
+  @override
+  String get title;
 
-### Filter
+  @override
+  Future<ReadStyleResult> readStyle(String input);
 
-**Expression-basiert (v2, empfohlen):**
-```json
-["all",
-  ["==", ["get", "type"], "residential"],
-  [">", ["get", "area"], 1000]
-]
+  @override
+  Future<WriteStyleResult<String>> writeStyle(Style style);
+
+  Future<ReadStyleResult> readMapboxStyle(MapboxStyle input);
+  Future<WriteStyleResult<MapboxStyle>> writeMapboxStyle(Style style);
+}
 ```
 
-**Legacy (v1, deprecated aber weit verbreitet):**
-```json
-["all",
-  ["==", "type", "residential"],
-  [">", "area", 1000]
-]
-```
+### Mapping-Regeln
 
-Unterschied: v1 verwendet blanke Property-Namen als Strings, v2 verwendet `["get", "prop"]`-Expressions.
-
-| Mapbox-Operator | Typ |
+| Mapbox Layer | `mapstyler_style` |
 |---|---|
-| `==`, `!=`, `<`, `>`, `<=`, `>=` | Vergleich |
-| `all`, `any` | Logische Kombination |
-| `!` | Negation |
-| `has`, `!has` | Property-Existenzprüfung |
-| `in`, `!in` | Wert in Liste |
-| `none` | Alias für `!any` |
+| `fill` | `FillSymbolizer` |
+| `line` | `LineSymbolizer` |
+| `circle` | `MarkSymbolizer` mit `wellKnownName: "circle"` |
+| `symbol` mit `text-*` | `TextSymbolizer` |
+| `symbol` mit `icon-*` | `IconSymbolizer` |
+| `symbol` mit Text und Icon | ein `Rule` mit zwei Symbolizers |
+| `raster` | `RasterSymbolizer` |
+| `background` | nicht unterstützt, Warning |
+| `fill-extrusion`, `hillshade`, `heatmap`, `sky` | nicht unterstützt, Warning |
 
-### Expression-System
+### Source-Regeln
 
-Mapbox GL Expressions sind Array-basiert: `[operator, ...args]`. Sie können in Paint- und Layout-Properties sowie in Filtern vorkommen.
+- `source` und `source-layer` bleiben im Adapter als Mapbox-spezifische
+  Information relevant, werden aber nicht Teil von `mapstyler_style.Style`.
+- Informationen, die für einen verlustärmeren Rückweg nötig sind, dürfen in
+  `Rule.name` oder `Rule`-nahen Metadaten nicht versteckt werden.
+- Wenn der Rückweg zusätzliche Mapbox-Metadaten braucht, sollen diese über
+  dokumentierte Adapter-Hilfsstrukturen oder `metadata["geostyler:*"]`
+  transportiert werden.
 
-**Kategorien:**
+### Zoom -> `ScaleDenominator`
 
-| Kategorie | Operatoren (Auswahl) |
-|---|---|
-| **Lookup** | `get`, `has`, `id`, `geometry-type`, `properties`, `at`, `length` |
-| **Math** | `+`, `-`, `*`, `/`, `%`, `^`, `abs`, `ceil`, `floor`, `round`, `sqrt`, `log`, `log2`, `ln`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `min`, `max`, `pi`, `e` |
-| **String** | `concat`, `downcase`, `upcase`, `trim` |
-| **Color** | `rgb`, `rgba`, `to-rgba` |
-| **Entscheidung** | `case`, `match`, `coalesce`, `step`, `interpolate`, `interpolate-hcl`, `interpolate-lab` |
-| **Vergleich** | `==`, `!=`, `<`, `>`, `<=`, `>=` |
-| **Logik** | `all`, `any`, `!` |
-| **Typ** | `typeof`, `to-string`, `to-number`, `to-boolean`, `to-color`, `literal` |
-| **Variable** | `let`, `var` |
-| **Zoom/Feature** | `zoom`, `feature-state` |
+Die Umrechnung ist verbindlich:
 
-**Wichtige Expressions für mapstyler-Mapping:**
-
-```
-["get", "fieldname"]             → PropertyGet("fieldname")
-["interpolate", mode, input, …]  → InterpolateFunction
-["step", input, default, …]      → StepFunction
-["case", c1, v1, c2, v2, fb]    → CaseFunction
-["match", input, v1, o1, …, fb] → CaseFunction (umgeschrieben als Gleichheits-Kette)
-["concat", a, b, c]              → ArgsFunction("strConcat")
-["literal", value]               → LiteralExpression(value)
-["zoom"]                          → ArgsFunction("zoom") (spezieller Input)
-```
-
-### Zoom ↔ ScaleDenominator
-
-Mapbox verwendet Zoom-Level (0–24), OGC/GeoStyler verwendet Scale Denominators. Umrechnung (Web Mercator, 96 DPI):
-
-```
+```text
 scaleDenominator = 559_082_264.028 / 2^zoom
 ```
 
-| Zoom | Scale Denominator |
-|---|---|
-| 0 | 559.082.264 |
-| 5 | 17.471.321 |
-| 10 | 545.979 |
-| 15 | 17.062 |
-| 18 | 2.133 |
-| 22 | 133 |
+Das Mapping lautet:
 
-**Achtung Inversions-Mapping:**
-- `minzoom` (niedrigste erlaubte Zoomstufe = weitester Blick) → `ScaleDenominator.max` (größter Wert)
-- `maxzoom` (höchste erlaubte Zoomstufe = nächster Blick) → `ScaleDenominator.min` (kleinster Wert)
+- `minzoom` -> `ScaleDenominator.max`
+- `maxzoom` -> `ScaleDenominator.min`
 
-### Farben
+### Filter-MVP
 
-Mapbox unterstützt mehrere Farbformate:
+Beim Lesen müssen mindestens diese Mapbox-Filter unterstützt werden:
 
-| Format | Beispiel |
-|---|---|
-| Hex | `#ff0000`, `#f00` |
-| RGB | `rgb(255, 0, 0)` |
-| RGBA | `rgba(255, 0, 0, 0.5)` |
-| HSL | `hsl(0, 100%, 50%)` |
-| HSLA | `hsla(0, 100%, 50%, 0.5)` |
-| CSS Named | `red`, `blue`, `transparent` |
+- Vergleich: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- Kombination: `all`, `any`, `none`
+- Negation: `!`
+- Property-Existenz: `has`, `!has`
+- Listenvergleich: `in`, `!in`
+- Legacy-v1-Filter und expression-basierte v2-Filter
 
-Alle werden auf `#rrggbb` normalisiert (GeoStyler-Konvention). Opacity aus RGBA/HSLA wird separat extrahiert.
+Nicht unterstützte Filter führen zu Warning und Überspringen des betroffenen
+Layers. Sie führen nicht zu einem partiell falschen Filter.
 
-## Objektmodell — mapbox4dart
+### Expression-MVP
 
-### Typübersicht
+Beim Lesen und Schreiben müssen mindestens diese Expressions unterstützt werden:
 
-```
-MapboxStyle
- ├── version: int (8)
- ├── name: String?
- ├── metadata: Map<String, dynamic>?
- ├── sources: Map<String, MapboxSource>
- ├── sprite: String?
- ├── glyphs: String?
- ├── layers: List<MapboxLayer>
- ├── center: (double, double)?
- ├── zoom: double?
- ├── bearing: double?
- └── pitch: double?
+- `get`
+- `literal`
+- `concat`
+- `case`
+- `match`
+- `step`
+- `interpolate` mit `linear` und `exponential`
+- `zoom`
+- einfache Literale: `String`, `num`, `bool`
 
-MapboxSource
- ├── type: MapboxSourceType (vector, raster, raster-dem, geojson, image, video)
- └── properties: Map<String, dynamic>  (url, tiles, data, etc.)
+Diese Expressions sind explizit nicht Teil des MVP:
 
-MapboxLayer
- ├── id: String
- ├── type: MapboxLayerType
- ├── source: String?
- ├── sourceLayer: String?
- ├── filter: dynamic (Expression oder null)
- ├── paint: Map<String, dynamic>
- ├── layout: Map<String, dynamic>
- ├── minzoom: double?
- ├── maxzoom: double?
- └── metadata: Map<String, dynamic>?
-```
+- `let`, `var`
+- `feature-state`
+- `interpolate-hcl`, `interpolate-lab`
+- `rgb`, `rgba`, `to-rgba`, `to-color`
+- `geometry-type`, `id`, `properties`
+- `collator`, `format`, `image`
 
-### Design-Entscheidungen
+Nicht unterstützte Expressions führen zu Warning und dazu, dass die konkrete
+Property oder der Layer übersprungen wird. Das Verhalten muss pro Property
+deterministisch dokumentiert sein.
 
-**Paint/Layout als `Map<String, dynamic>` (nicht typisierte Klassen):**
-- Mapbox hat ~120 verschiedene Paint/Layout-Properties über alle Layer-Typen
-- Jeder Property-Wert kann ein Literal oder eine Expression sein
-- Typisierte Klassen für jeden Layer-Typ wären ~500 Zeilen Boilerplate mit geringem Mehrwert
-- Properties werden vom Adapter sowieso einzeln ausgelesen
-- Unbekannte Properties werden durchgereicht (Forward-Kompatibilität)
+### Schreibregeln (`Style` -> Mapbox)
 
-**Filter als `dynamic` (nicht typisiertes Expression-Modell):**
-- Mapbox-Filter sind JSON-Arrays mit beliebiger Verschachtelung
-- Die Expression-Semantik wird erst im Adapter interpretiert
-- `mapbox4dart` bewahrt die Filter exakt wie im Original-JSON
+- Pro `Rule` wird standardmäßig pro Symbolizer ein Mapbox-Layer erzeugt.
+- Sonderfall: `TextSymbolizer` und `IconSymbolizer` im selben `Rule` dürfen zu
+  einem gemeinsamen `symbol`-Layer zusammengeführt werden, wenn beide denselben
+  Zoombereich und kompatible Layout-Werte haben.
+- `MarkSymbolizer(wellKnownName: "circle")` wird als `circle`-Layer geschrieben.
+- Andere `MarkSymbolizer`-Formen sind im MVP nicht schreibbar und führen zu
+  Warning oder `WriteStyleFailure`, wenn kein degradierter Export definiert ist.
+- `RasterSymbolizer` wird nur geschrieben, wenn genügend Mapbox-spezifische
+  Source-/Layer-Information verfügbar ist.
 
-**Sources als schwach typisierte Map:**
-- Source-Typen haben unterschiedliche Felder (url, tiles, data, bounds, etc.)
-- Ein vollständig typisiertes Source-Modell wäre umfangreich ohne klaren Mehrwert
-- `MapboxSource.type` reicht für die Dispatch-Logik
+### Error-/Warning-Vertrag im Adapter
 
-### Codec-API
+- Invalides Mapbox-JSON oder invalides `MapboxStyle`-Modell -> `Failure`
+- Nicht unterstützte, aber überspringbare Layer -> `Success` mit Warning
+- Nicht unterstützte Expressions in einer einzelnen Property -> `Success` mit
+  Warning, wenn der restliche Layer sinnvoll weiterverarbeitet werden kann
+- Nicht schreibbare `Style`-Konstrukte ohne definierte Degradierung ->
+  `WriteStyleFailure`
+
+## Farben
+
+`mapbox4dart` stellt Farb-Utilities bereit. Sie müssen mindestens diese Formate
+verstehen:
+
+- Hex
+- RGB
+- RGBA
+- HSL
+- HSLA
+- CSS Named Colors
+
+Verbindlicher Utility-Vertrag:
 
 ```dart
-const codec = Mapbox4DartCodec();
-
-// Lesen
-final result = codec.parseString(jsonString);
-switch (result) {
-  case ReadMapboxSuccess(:final style, :final warnings): ...
-  case ReadMapboxFailure(:final message): ...
-}
-
-// Schreiben
-final result = codec.encodeString(style);
-switch (result) {
-  case WriteMapboxSuccess(:final json): ...
-  case WriteMapboxFailure(:final message): ...
-}
+({String hex, double? opacity}) normalizeColor(String input);
 ```
 
-### Farb-Utilities
-
-```dart
-normalizeColor('rgba(255, 0, 0, 0.5)');  // → (hex: '#ff0000', opacity: 0.5)
-normalizeColor('#f00');                    // → (hex: '#ff0000', opacity: null)
-normalizeColor('red');                     // → (hex: '#ff0000', opacity: null)
-```
+`hex` ist immer `#rrggbb`. Alpha wird als `opacity` separat zurückgegeben.
 
 ## Dateistruktur
 
-```
+### `mapbox4dart`
+
+```text
 mapbox4dart/
 ├── lib/
-│   ├── mapbox4dart.dart                    # Library-Export
+│   ├── mapbox4dart.dart
 │   └── src/
 │       ├── model/
-│       │   ├── mapbox_style.dart           # MapboxStyle (Root)
-│       │   ├── mapbox_layer.dart           # MapboxLayer
-│       │   ├── mapbox_source.dart          # MapboxSource
-│       │   └── mapbox_types.dart           # Enums (LayerType, SourceType)
+│       │   ├── mapbox_style.dart
+│       │   ├── mapbox_layer.dart
+│       │   ├── mapbox_source.dart
+│       │   └── mapbox_types.dart
 │       ├── read/
-│       │   ├── read_result.dart            # ReadMapboxResult (sealed)
-│       │   └── mapbox_reader.dart          # JSON → MapboxStyle
+│       │   ├── read_result.dart
+│       │   └── mapbox_reader.dart
 │       ├── write/
-│       │   ├── write_result.dart           # WriteMapboxResult (sealed)
-│       │   └── mapbox_writer.dart          # MapboxStyle → JSON
-│       └── color_util.dart                 # Farb-Normalisierung
+│       │   ├── write_result.dart
+│       │   └── mapbox_writer.dart
+│       ├── codec/
+│       │   └── mapbox_style_codec.dart
+│       └── color_util.dart
 ├── test/
-│   ├── mapbox4dart_test.dart
-│   └── color_util_test.dart
 ├── example/
-│   └── mapbox4dart_example.dart
 ├── pubspec.yaml
-├── CHANGELOG.md
 ├── README.md
+├── CHANGELOG.md
 └── LICENSE
 ```
 
-## Abgrenzung
+### `mapstyler_mapbox_adapter`
 
-| Verantwortung | mapbox4dart | mapstyler_mapbox_adapter |
-|---|---|---|
-| JSON parsing/encoding | ✅ | ❌ |
-| Typisiertes Objektmodell | ✅ | ❌ |
-| Farb-Normalisierung | ✅ | ❌ |
-| Expression → GeoStyler-Function | ❌ | ✅ |
-| Filter → mapstyler-Filter | ❌ | ✅ |
-| Layer → Symbolizer-Mapping | ❌ | ✅ |
-| Zoom → ScaleDenominator | ❌ | ✅ |
-| geostyler:ref Grouping | ❌ | ✅ |
+```text
+mapstyler_mapbox_adapter/
+├── lib/
+│   ├── mapstyler_mapbox_adapter.dart
+│   └── src/
+│       ├── mapbox_style_adapter.dart
+│       ├── read/
+│       │   ├── filter_mapper.dart
+│       │   ├── expression_mapper.dart
+│       │   └── layer_to_rule_mapper.dart
+│       └── write/
+│           ├── symbolizer_mapper.dart
+│           └── zoom_mapper.dart
+├── test/
+├── example/
+├── pubspec.yaml
+├── README.md
+├── CHANGELOG.md
+└── LICENSE
+```
+
+## Testmatrix
+
+Vor einer ersten Veröffentlichung müssen mindestens diese Tests existieren:
+
+- `mapbox4dart`: Root-Read für vollständigen v8-Style
+- `mapbox4dart`: Roundtrip mit unbekannten Root-/Layer-Feldern
+- `mapbox4dart`: Unknown Layer Type bleibt als `unknown + rawType` erhalten
+- `mapbox4dart`: Farb-Normalisierung für Hex/RGB/RGBA/HSL/HSLA/named colors
+- Adapter: `fill`, `line`, `circle`, `symbol(text)`, `symbol(icon)`, `raster`
+- Adapter: `symbol` mit Text und Icon in einem Layer
+- Adapter: Legacy-v1-Filter und Expression-v2-Filter
+- Adapter: `minzoom`/`maxzoom` <-> `ScaleDenominator`
+- Adapter: unsupported layer types erzeugen Warnings
+- Adapter: `Style` -> Mapbox für `Fill`, `Line`, `circle`, `Text`, `Icon`
+- Adapter: deterministische Warnings bei unsupported expressions
 
 ## Implementierungsreihenfolge
 
-1. Enums und Typen (`mapbox_types.dart`)
-2. Modell-Klassen (`mapbox_style.dart`, `mapbox_layer.dart`, `mapbox_source.dart`)
-3. Reader (`mapbox_reader.dart`) — JSON → MapboxStyle
-4. Writer (`mapbox_writer.dart`) — MapboxStyle → JSON
-5. Result-Typen (`read_result.dart`, `write_result.dart`)
-6. Codec-Fassade (`mapbox4dart_codec.dart`)
-7. Farb-Utilities (`color_util.dart`)
-8. Tests + Fixtures
-9. README, CHANGELOG, Example
+1. `mapbox4dart` Modell und Enums
+2. `mapbox4dart` Reader
+3. `mapbox4dart` Writer
+4. `mapbox4dart` Codec und Result-Typen
+5. `mapbox4dart` Farb-Utilities und Roundtrip-Tests
+6. Adapter-Grundgerüst mit `StyleParser<String>`
+7. Layer-Mapping `fill`, `line`, `circle`, `symbol`, `raster`
+8. Filter-Mapping MVP
+9. Expression-Mapping MVP
+10. Write-Pfad `Style` -> Mapbox
+11. Warnings, unsupported handling, Examples, README
 
-## Aufwand
+## Nicht-Ziele für v1
 
-Geschätzt ~600–900 Zeilen Dart (deutlich weniger als `qml4dart`, da kein XML-Parsing — nur JSON-Mapping auf typisiertes Modell).
-
-Die Komplexität liegt primär im **Adapter** (Expression-Konvertierung, Layer→Symbolizer-Mapping), nicht im Codec selbst.
+- Vollständige Abdeckung der gesamten Mapbox-Expression-Sprache
+- Vollständiger Support für `background`, `fill-extrusion`, `hillshade`,
+  `heatmap`, `sky`
+- Byte-identischer JSON-Roundtrip
+- Rendern oder Auswerten von Sprites und Glyphen
