@@ -11,12 +11,17 @@ import 'read_rule.dart';
 import 'read_symbol.dart';
 
 /// Reads a `<renderer-v2>` element into a [QmlRenderer].
+///
+/// Parses the renderer type, shared symbols, and the type-specific
+/// child collections (categories, ranges, or rules).
 class ReadRenderer {
   const ReadRenderer();
 
   static const _symbolReader = ReadSymbol();
   static const _ruleReader = ReadRule();
 
+  /// Parses [element] into a [QmlRenderer], appending non-fatal issues
+  /// to [warnings].
   QmlRenderer readRenderer(XmlElement element, List<String> warnings) {
     final typeStr = element.getAttribute('type') ?? '';
     final type = QmlRendererType.fromString(typeStr);

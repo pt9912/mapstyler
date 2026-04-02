@@ -4,12 +4,16 @@ import '../model/qml_document.dart';
 import '../write/write_renderer.dart';
 import '../write/write_result.dart';
 
-/// Top-level XML writer: [QmlDocument] → QML string.
+/// Top-level XML writer that encodes a [QmlDocument] into a QML XML string.
+///
+/// Builds the `<qgis>` root element with version and scale attributes,
+/// then delegates renderer writing to [WriteRenderer].
 class QmlXmlWriter {
   const QmlXmlWriter();
 
   static const _rendererWriter = WriteRenderer();
 
+  /// Encodes [document] and returns a [WriteQmlResult].
   WriteQmlResult write(QmlDocument document) {
     try {
       final warnings = <String>[];

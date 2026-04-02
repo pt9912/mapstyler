@@ -4,13 +4,18 @@ import '../model/qml_renderer.dart';
 import 'write_rule.dart';
 import 'write_symbol.dart';
 
-/// Writes a `<renderer-v2>` element to QML XML.
+/// Writes a [QmlRenderer] as a `<renderer-v2>` element to QML XML.
+///
+/// Emits categories, ranges, rules, and symbols in the order expected
+/// by QGIS, followed by empty `<rotation>` and `<sizescale>` elements
+/// for compatibility.
 class WriteRenderer {
   const WriteRenderer();
 
   static const _symbolWriter = WriteSymbol();
   static const _ruleWriter = WriteRule();
 
+  /// Appends a `<renderer-v2>` element for [renderer] to [builder].
   void writeRenderer(XmlBuilder builder, QmlRenderer renderer) {
     final attrs = <String, String>{
       'type': renderer.type.toQmlString(),

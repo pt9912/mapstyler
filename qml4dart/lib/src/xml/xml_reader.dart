@@ -5,12 +5,16 @@ import '../read/read_renderer.dart';
 import '../read/read_result.dart';
 import '../xml/xml_helpers.dart';
 
-/// Top-level XML reader: QML string → [QmlDocument].
+/// Top-level XML reader that parses a QML XML string into a [QmlDocument].
+///
+/// Validates the root `<qgis>` element and delegates renderer parsing
+/// to [ReadRenderer].
 class QmlXmlReader {
   const QmlXmlReader();
 
   static const _rendererReader = ReadRenderer();
 
+  /// Parses [xmlString] and returns a [ReadQmlResult].
   ReadQmlResult read(String xmlString) {
     final XmlDocument document;
     try {

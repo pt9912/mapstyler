@@ -3,10 +3,14 @@ import 'package:xml/xml.dart';
 import '../model/qml_symbol.dart';
 import '../model/qml_symbol_layer.dart';
 
-/// Writes `<symbols>` and `<symbol>` elements to QML XML.
+/// Writes [QmlSymbol]s as `<symbols>` / `<symbol>` / `<layer>` elements.
+///
+/// Symbol layers are written in the new `<Option type="Map">` property
+/// format (QGIS >= 3.26).
 class WriteSymbol {
   const WriteSymbol();
 
+  /// Wraps all [symbols] in a `<symbols>` element and appends to [builder].
   void writeSymbols(XmlBuilder builder, Map<String, QmlSymbol> symbols) {
     builder.element('symbols', nest: () {
       for (final entry in symbols.entries) {
