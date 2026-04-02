@@ -127,7 +127,13 @@ docker build --target qml-publish-check --no-cache-filter qml-publish-check --pr
 ```bash
 docker build --target qml-adapter-analyze .
 docker build --target qml-adapter-test .
-docker build --target qml-adapter-publish-check .
+docker build --target qml-adapter-coverage --no-cache-filter qml-adapter-coverage --progress=plain .
+docker build --target qml-adapter-coverage-check --no-cache-filter qml-adapter-coverage --progress=plain .
+docker build --target qml-adapter-coverage-uncovered --no-cache-filter qml-adapter-coverage-uncovered --progress=plain -t qml-adapter:uncov .
+docker run --rm qml-adapter:uncov                              # uncovered extrahieren
+docker build --target qml-adapter-coverage -t qml-adapter:cov .
+docker run --rm qml-adapter:cov > coverage/lcov.info           # lcov.info extrahieren
+docker build --target qml-adapter-publish-check --no-cache-filter qml-publish-check --progress=plain .
 ```
 
 ### flutter_mapstyler
