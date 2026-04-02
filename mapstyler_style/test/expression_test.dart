@@ -91,6 +91,11 @@ void main() {
       expect(func.name, 'customFunc');
     });
 
+    test('PropertyGet name getter', () {
+      const pg = PropertyGet('f');
+      expect(pg.name, 'property');
+    });
+
     test('PropertyGet round-trip', () {
       const original = PropertyGet('fieldName');
       final json = original.toJson();
@@ -212,6 +217,75 @@ void main() {
     });
   });
 
+  group('CaseParameter', () {
+    test('equality', () {
+      const a = CaseParameter(
+        condition: LiteralExpression<Object>(true),
+        value: LiteralExpression<Object>('yes'),
+      );
+      const b = CaseParameter(
+        condition: LiteralExpression<Object>(true),
+        value: LiteralExpression<Object>('yes'),
+      );
+      const c = CaseParameter(
+        condition: LiteralExpression<Object>(false),
+        value: LiteralExpression<Object>('yes'),
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+
+    test('fromJson round-trip', () {
+      final json = {
+        'case': true,
+        'value': 'result',
+      };
+      final cp = CaseParameter.fromJson(json);
+      expect(cp.toJson(), json);
+    });
+  });
+
+  group('StepParameter', () {
+    test('equality', () {
+      const a = StepParameter(
+        boundary: LiteralExpression<Object>(10),
+        value: LiteralExpression<Object>('a'),
+      );
+      const b = StepParameter(
+        boundary: LiteralExpression<Object>(10),
+        value: LiteralExpression<Object>('a'),
+      );
+      const c = StepParameter(
+        boundary: LiteralExpression<Object>(20),
+        value: LiteralExpression<Object>('a'),
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('InterpolateParameter', () {
+    test('equality', () {
+      const a = InterpolateParameter(
+        stop: LiteralExpression<Object>(0),
+        value: LiteralExpression<Object>('#000'),
+      );
+      const b = InterpolateParameter(
+        stop: LiteralExpression<Object>(0),
+        value: LiteralExpression<Object>('#000'),
+      );
+      const c = InterpolateParameter(
+        stop: LiteralExpression<Object>(100),
+        value: LiteralExpression<Object>('#000'),
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
   group('CaseFunction', () {
     test('fromJson parses case with fallback', () {
       final json = {
@@ -262,6 +336,14 @@ void main() {
       expect(restored, original);
     });
 
+    test('name getter', () {
+      const cf = CaseFunction(
+        cases: [],
+        fallback: LiteralExpression<Object>('x'),
+      );
+      expect(cf.name, 'case');
+    });
+
     test('equality', () {
       const a = CaseFunction(
         cases: [
@@ -287,10 +369,19 @@ void main() {
       );
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
   group('StepFunction', () {
+    test('name getter', () {
+      const sf = StepFunction(
+        input: LiteralExpression<Object>(0),
+        defaultValue: LiteralExpression<Object>('x'),
+      );
+      expect(sf.name, 'step');
+    });
+
     test('fromJson parses step with stops', () {
       final json = {
         'name': 'step',
@@ -378,6 +469,14 @@ void main() {
   });
 
   group('InterpolateFunction', () {
+    test('name getter', () {
+      const ip = InterpolateFunction(
+        mode: ['linear'],
+        input: LiteralExpression<Object>(0),
+      );
+      expect(ip.name, 'interpolate');
+    });
+
     test('fromJson parses linear interpolation', () {
       final json = {
         'name': 'interpolate',

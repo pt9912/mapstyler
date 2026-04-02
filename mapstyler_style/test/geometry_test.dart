@@ -70,6 +70,7 @@ void main() {
       const c = EnvelopeGeometry(minX: 0, minY: 46, maxX: 9, maxY: 48);
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -104,6 +105,7 @@ void main() {
       const c = LineStringGeometry([(8.0, 47.0)]);
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -170,6 +172,32 @@ void main() {
         [(8.0, 47.0), (9.0, 47.0), (9.0, 48.0), (8.0, 47.0)],
       ]);
       expect(a, equals(b));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('PolygonGeometry equality', () {
+    test('not equal with different rings', () {
+      const a = PolygonGeometry([
+        [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 0.0)],
+      ]);
+      const b = PolygonGeometry([
+        [(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 0.0)],
+      ]);
+      const c = PolygonGeometry([
+        [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 0.0)],
+        [(0.2, 0.2), (0.8, 0.2), (0.8, 0.8), (0.2, 0.2)],
+      ]);
+      expect(a, isNot(equals(b)));
+      expect(a, isNot(equals(c)));
+    });
+  });
+
+  group('LineStringGeometry equality', () {
+    test('not equal with different coordinates', () {
+      const a = LineStringGeometry([(0.0, 0.0), (1.0, 1.0)]);
+      const b = LineStringGeometry([(0.0, 0.0), (2.0, 2.0)]);
+      expect(a, isNot(equals(b)));
     });
   });
 

@@ -60,6 +60,7 @@ void main() {
       const c = FillSymbolizer(color: LiteralExpression('#00ff00'));
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -93,6 +94,11 @@ void main() {
       expect(sym.toJson(), json);
     });
 
+    test('kind getter', () {
+      const sym = LineSymbolizer();
+      expect(sym.kind, 'Line');
+    });
+
     test('equality', () {
       const a = LineSymbolizer(
         color: LiteralExpression('#000'),
@@ -103,6 +109,7 @@ void main() {
         width: LiteralExpression(1.0),
       );
       expect(a, equals(b));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -135,12 +142,18 @@ void main() {
       expect(sym.toJson(), json);
     });
 
+    test('kind getter', () {
+      const sym = MarkSymbolizer(wellKnownName: 'circle');
+      expect(sym.kind, 'Mark');
+    });
+
     test('equality', () {
       const a = MarkSymbolizer(wellKnownName: 'circle');
       const b = MarkSymbolizer(wellKnownName: 'circle');
       const c = MarkSymbolizer(wellKnownName: 'square');
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -404,6 +417,329 @@ void main() {
       final cm = ColorMap.fromJson(json);
       expect(cm.extended, true);
       expect(cm.toJson(), json);
+    });
+  });
+
+  group('IconSymbolizer', () {
+    test('kind getter', () {
+      const sym = IconSymbolizer(image: LiteralExpression('x'));
+      expect(sym.kind, 'Icon');
+    });
+
+    test('equality with all fields (non-const)', () {
+      // Use final (not const) to avoid canonicalization so == evaluates all fields.
+      final a = IconSymbolizer(
+        image: const LiteralExpression('a.png'),
+        format: 'image/png',
+        size: const LiteralExpression(24.0),
+        opacity: const LiteralExpression(0.9),
+        rotate: const LiteralExpression(90.0),
+      );
+      final b = IconSymbolizer(
+        image: const LiteralExpression('a.png'),
+        format: 'image/png',
+        size: const LiteralExpression(24.0),
+        opacity: const LiteralExpression(0.9),
+        rotate: const LiteralExpression(90.0),
+      );
+      final c = IconSymbolizer(
+        image: const LiteralExpression('a.png'),
+        format: 'image/svg',
+        size: const LiteralExpression(24.0),
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+
+    test('round-trip with all fields', () {
+      final json = {
+        'kind': 'Icon',
+        'image': 'marker.png',
+        'format': 'image/png',
+        'size': 24.0,
+        'opacity': 0.9,
+        'rotate': 45.0,
+      };
+      final sym = Symbolizer.fromJson(json);
+      expect(sym.toJson(), json);
+    });
+  });
+
+  group('TextSymbolizer', () {
+    test('kind getter', () {
+      const sym = TextSymbolizer(label: LiteralExpression('x'));
+      expect(sym.kind, 'Text');
+    });
+
+    test('equality with all fields (non-const)', () {
+      final a = TextSymbolizer(
+        label: const LiteralExpression('L'),
+        color: const LiteralExpression('#000'),
+        size: const LiteralExpression(14.0),
+        font: 'Arial',
+        opacity: const LiteralExpression(1.0),
+        rotate: const LiteralExpression(0.0),
+        haloColor: const LiteralExpression('#fff'),
+        haloWidth: const LiteralExpression(2.0),
+        placement: 'point',
+      );
+      final b = TextSymbolizer(
+        label: const LiteralExpression('L'),
+        color: const LiteralExpression('#000'),
+        size: const LiteralExpression(14.0),
+        font: 'Arial',
+        opacity: const LiteralExpression(1.0),
+        rotate: const LiteralExpression(0.0),
+        haloColor: const LiteralExpression('#fff'),
+        haloWidth: const LiteralExpression(2.0),
+        placement: 'point',
+      );
+      final c = TextSymbolizer(
+        label: const LiteralExpression('L'),
+        font: 'Helvetica',
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+
+    test('round-trip with all fields', () {
+      final json = {
+        'kind': 'Text',
+        'label': 'Test',
+        'color': '#000',
+        'size': 14.0,
+        'font': 'Arial',
+        'opacity': 1.0,
+        'rotate': 0.0,
+        'haloColor': '#fff',
+        'haloWidth': 2.0,
+        'placement': 'point',
+      };
+      final sym = Symbolizer.fromJson(json);
+      expect(sym.toJson(), json);
+    });
+  });
+
+  group('ColorMapEntry', () {
+    test('round-trip with all fields', () {
+      final json = {
+        'color': '#ff0000',
+        'quantity': 100.0,
+        'label': 'High',
+        'opacity': 0.8,
+      };
+      final entry = ColorMapEntry.fromJson(json);
+      expect(entry.toJson(), json);
+    });
+
+    test('round-trip minimal', () {
+      final json = {'color': '#00ff00', 'quantity': 0.0};
+      final entry = ColorMapEntry.fromJson(json);
+      expect(entry.toJson(), json);
+    });
+
+    test('equality', () {
+      const a = ColorMapEntry(color: '#ff0000', quantity: 0);
+      const b = ColorMapEntry(color: '#ff0000', quantity: 0);
+      const c = ColorMapEntry(color: '#ff0000', quantity: 100);
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+
+    test('equality with label and opacity (non-const)', () {
+      final a =
+          ColorMapEntry(color: '#f00', quantity: 0, label: 'L', opacity: 0.5);
+      final b =
+          ColorMapEntry(color: '#f00', quantity: 0, label: 'L', opacity: 0.5);
+      final c =
+          ColorMapEntry(color: '#f00', quantity: 0, label: 'X', opacity: 0.5);
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+    });
+  });
+
+  group('ContrastEnhancement', () {
+    test('round-trip with all fields', () {
+      final json = {'enhancementType': 'normalize', 'gammaValue': 1.2};
+      final ce = ContrastEnhancement.fromJson(json);
+      expect(ce.toJson(), json);
+    });
+
+    test('round-trip minimal', () {
+      final json = <String, dynamic>{};
+      final ce = ContrastEnhancement.fromJson(json);
+      expect(ce.toJson(), json);
+    });
+
+    test('equality', () {
+      const a =
+          ContrastEnhancement(enhancementType: 'normalize', gammaValue: 1.0);
+      const b =
+          ContrastEnhancement(enhancementType: 'normalize', gammaValue: 1.0);
+      const c =
+          ContrastEnhancement(enhancementType: 'histogram', gammaValue: 1.0);
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('Channel', () {
+    test('round-trip without contrastEnhancement', () {
+      final json = {'sourceChannelName': '1'};
+      final ch = Channel.fromJson(json);
+      expect(ch.toJson(), json);
+    });
+
+    test('round-trip with contrastEnhancement', () {
+      final json = {
+        'sourceChannelName': '3',
+        'contrastEnhancement': {'enhancementType': 'normalize', 'gammaValue': 1.5},
+      };
+      final ch = Channel.fromJson(json);
+      expect(ch.toJson(), json);
+    });
+
+    test('equality', () {
+      const a = Channel(sourceChannelName: '1');
+      const b = Channel(sourceChannelName: '1');
+      const c = Channel(sourceChannelName: '2');
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('ChannelSelection', () {
+    test('round-trip RGB', () {
+      final json = {
+        'redChannel': {'sourceChannelName': '1'},
+        'greenChannel': {'sourceChannelName': '2'},
+        'blueChannel': {'sourceChannelName': '3'},
+      };
+      final cs = ChannelSelection.fromJson(json);
+      expect(cs.toJson(), json);
+    });
+
+    test('round-trip gray', () {
+      final json = {
+        'grayChannel': {'sourceChannelName': '1'},
+      };
+      final cs = ChannelSelection.fromJson(json);
+      expect(cs.toJson(), json);
+    });
+
+    test('equality', () {
+      const a = ChannelSelection(
+        grayChannel: Channel(sourceChannelName: '1'),
+      );
+      const b = ChannelSelection(
+        grayChannel: Channel(sourceChannelName: '1'),
+      );
+      const c = ChannelSelection(
+        grayChannel: Channel(sourceChannelName: '2'),
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('RasterSymbolizer CSS-filter round-trip', () {
+    test('round-trip with all CSS-filter properties', () {
+      final json = {
+        'kind': 'Raster',
+        'opacity': 0.8,
+        'hueRotate': 90.0,
+        'brightnessMin': 0.2,
+        'brightnessMax': 0.9,
+        'saturation': 1.5,
+        'contrast': 1.2,
+      };
+      final sym = Symbolizer.fromJson(json);
+      expect(sym.toJson(), json);
+    });
+
+    test('round-trip with full raster config', () {
+      final json = {
+        'kind': 'Raster',
+        'opacity': 0.8,
+        'colorMap': {
+          'type': 'ramp',
+          'colorMapEntries': [
+            {'color': '#0000ff', 'quantity': 0.0, 'label': 'Low', 'opacity': 1.0},
+            {'color': '#ff0000', 'quantity': 100.0, 'label': 'High'},
+          ],
+          'extended': true,
+        },
+        'channelSelection': {
+          'redChannel': {'sourceChannelName': '1'},
+          'greenChannel': {'sourceChannelName': '2'},
+          'blueChannel': {
+            'sourceChannelName': '3',
+            'contrastEnhancement': {
+              'enhancementType': 'normalize',
+              'gammaValue': 1.2,
+            },
+          },
+        },
+        'contrastEnhancement': {
+          'enhancementType': 'histogram',
+          'gammaValue': 0.8,
+        },
+        'hueRotate': 45.0,
+        'brightnessMin': 0.1,
+        'brightnessMax': 0.95,
+        'saturation': 1.2,
+        'contrast': 1.1,
+      };
+      final sym = Symbolizer.fromJson(json);
+      expect(sym.toJson(), json);
+    });
+
+    test('equality with all fields (non-const)', () {
+      // Use final to avoid const canonicalization — ensures == evaluates all fields.
+      final a = RasterSymbolizer(
+        opacity: const LiteralExpression(0.8),
+        colorMap: ColorMap(type: 'ramp', colorMapEntries: [
+          const ColorMapEntry(color: '#f00', quantity: 0),
+        ]),
+        channelSelection: const ChannelSelection(
+          grayChannel: Channel(sourceChannelName: '1'),
+        ),
+        contrastEnhancement: const ContrastEnhancement(
+          enhancementType: 'normalize',
+          gammaValue: 1.0,
+        ),
+        hueRotate: const LiteralExpression(45.0),
+        brightnessMin: const LiteralExpression(0.1),
+        brightnessMax: const LiteralExpression(0.9),
+        saturation: const LiteralExpression(1.2),
+        contrast: const LiteralExpression(1.1),
+      );
+      final b = RasterSymbolizer(
+        opacity: const LiteralExpression(0.8),
+        colorMap: ColorMap(type: 'ramp', colorMapEntries: [
+          const ColorMapEntry(color: '#f00', quantity: 0),
+        ]),
+        channelSelection: const ChannelSelection(
+          grayChannel: Channel(sourceChannelName: '1'),
+        ),
+        contrastEnhancement: const ContrastEnhancement(
+          enhancementType: 'normalize',
+          gammaValue: 1.0,
+        ),
+        hueRotate: const LiteralExpression(45.0),
+        brightnessMin: const LiteralExpression(0.1),
+        brightnessMax: const LiteralExpression(0.9),
+        saturation: const LiteralExpression(1.2),
+        contrast: const LiteralExpression(1.1),
+      );
+      expect(a, equals(b));
+      expect(a.hashCode, b.hashCode);
     });
   });
 

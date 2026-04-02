@@ -204,6 +204,7 @@ void main() {
       );
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -284,6 +285,90 @@ void main() {
       );
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('Operator error handling', () {
+    test('ComparisonOperator.fromJson throws on unknown operator', () {
+      expect(
+        () => ComparisonOperator.fromJson('~='),
+        throwsFormatException,
+      );
+    });
+
+    test('CombinationOperator.fromJson throws on unknown operator', () {
+      expect(
+        () => CombinationOperator.fromJson('^^'),
+        throwsFormatException,
+      );
+    });
+  });
+
+  group('CombinationFilter equality', () {
+    test('equal filters', () {
+      const a = CombinationFilter(
+        operator: CombinationOperator.or,
+        filters: [
+          ComparisonFilter(
+            operator: ComparisonOperator.eq,
+            property: LiteralExpression('x'),
+            value: LiteralExpression<Object>(1),
+          ),
+        ],
+      );
+      const b = CombinationFilter(
+        operator: CombinationOperator.or,
+        filters: [
+          ComparisonFilter(
+            operator: ComparisonOperator.eq,
+            property: LiteralExpression('x'),
+            value: LiteralExpression<Object>(1),
+          ),
+        ],
+      );
+      const c = CombinationFilter(
+        operator: CombinationOperator.and,
+        filters: [
+          ComparisonFilter(
+            operator: ComparisonOperator.eq,
+            property: LiteralExpression('x'),
+            value: LiteralExpression<Object>(1),
+          ),
+        ],
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('NegationFilter equality', () {
+    test('equal filters', () {
+      const a = NegationFilter(
+        filter: ComparisonFilter(
+          operator: ComparisonOperator.eq,
+          property: LiteralExpression('a'),
+          value: LiteralExpression<Object>(1),
+        ),
+      );
+      const b = NegationFilter(
+        filter: ComparisonFilter(
+          operator: ComparisonOperator.eq,
+          property: LiteralExpression('a'),
+          value: LiteralExpression<Object>(1),
+        ),
+      );
+      const c = NegationFilter(
+        filter: ComparisonFilter(
+          operator: ComparisonOperator.neq,
+          property: LiteralExpression('a'),
+          value: LiteralExpression<Object>(1),
+        ),
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 

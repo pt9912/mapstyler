@@ -29,6 +29,7 @@ void main() {
       const c = ScaleDenominator(min: 1000, max: 50000);
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
@@ -111,6 +112,7 @@ void main() {
       const c = Rule(name: 'R2', symbolizers: []);
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
+      expect(a.hashCode, b.hashCode);
     });
   });
 
