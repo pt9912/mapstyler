@@ -11,19 +11,26 @@ import 'write/symbolizer_mapper.dart' as write;
 ///
 /// ```dart
 /// final adapter = MapboxStyleAdapter();
+///
+/// // Read Mapbox JSON → mapstyler Style
 /// final result = await adapter.readStyle(mapboxJson);
+///
+/// // Write Style → Mapbox JSON
+/// final writeResult = await adapter.writeStyle(style);
+/// if (writeResult case WriteStyleSuccess(:final output)) {
+///   print(output); // Mapbox GL Style JSON string
+/// }
 /// ```
 class MapboxStyleAdapter {
-  const MapboxStyleAdapter({
-    this.codec = const mb.MapboxStyleCodec(),
-  });
+  const MapboxStyleAdapter();
 
-  final mb.MapboxStyleCodec codec;
-
+  /// Human-readable name for this adapter.
   String get title => 'Mapbox GL';
 
-  /// Parses Mapbox GL Style JSON and converts to a mapstyler [Style].
+  /// Parses a Mapbox GL Style JSON string and converts it to a
+  /// mapstyler [Style].
   Future<ReadStyleResult> readStyle(String input) async {
+    final codec = const mb.MapboxStyleCodec();
     final parseResult = codec.readString(input);
     return switch (parseResult) {
       mb.ReadMapboxSuccess(:final output, :final warnings) => () {
@@ -41,11 +48,12 @@ class MapboxStyleAdapter {
     };
   }
 
-  /// Converts a mapstyler [Style] to Mapbox GL Style JSON.
+  /// Converts a mapstyler [Style] to a Mapbox GL Style JSON string.
   Future<WriteStyleResult<String>> writeStyle(Style style) async {
     final result = write.convertStyle(style);
     return switch (result) {
       WriteStyleSuccess(:final output, :final warnings) => () {
+          final codec = const mb.MapboxStyleCodec();
           final writeResult = codec.writeString(output);
           return switch (writeResult) {
             mb.WriteMapboxSuccess(:final output) =>
