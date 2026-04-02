@@ -69,6 +69,7 @@ RUN dart pub global run coverage:format_coverage \
     --in=coverage \
     --out=coverage/lcov.info
 RUN lcov --summary coverage/lcov.info
+ENTRYPOINT ["cat", "coverage/lcov.info"]
 
 # Coverage threshold check
 FROM style-coverage AS style-coverage-check
@@ -128,6 +129,7 @@ RUN dart pub global run coverage:format_coverage \
     --in=coverage \
     --out=coverage/lcov.info
 RUN lcov --summary coverage/lcov.info
+ENTRYPOINT ["cat", "coverage/lcov.info"]
 
 # Coverage threshold check
 FROM mapbox-coverage AS mapbox-coverage-check
@@ -177,6 +179,7 @@ RUN dart pub global run coverage:format_coverage \
     --in=coverage \
     --out=coverage/lcov.info
 RUN lcov --summary coverage/lcov.info
+ENTRYPOINT ["cat", "coverage/lcov.info"]
 
 # Coverage threshold check
 FROM sld-coverage AS sld-coverage-check
@@ -295,6 +298,7 @@ FROM flutter-base AS flutter-coverage
 WORKDIR /app/flutter_mapstyler
 RUN flutter test --coverage
 RUN lcov --summary coverage/lcov.info
+ENTRYPOINT ["cat", "coverage/lcov.info"]
 
 # Coverage threshold check
 FROM flutter-coverage AS flutter-coverage-check

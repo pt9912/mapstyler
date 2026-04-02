@@ -60,6 +60,78 @@ final json = style.toJson();
 
 Alle Packages außer `flutter_mapstyler` sind **pure Dart** — nutzbar in Flutter-Apps, CLI-Tools und Server-Anwendungen. `flutter_mapstyler` benötigt das Flutter SDK.
 
+## Docker-Builds
+
+Das Projekt enthält ein Multi-Stage-Dockerfile. Jedes Package hat eigene Targets für Analyse, Tests, Coverage und Publish-Check. Die pure-Dart-Packages bauen auf `dart:stable`, das Flutter-Package auf `ghcr.io/cirruslabs/flutter:stable`.
+
+### mapstyler_style
+
+```bash
+docker build --target style-analyze .
+docker build --target style-test .
+docker build --target style-coverage -t style:cov .
+docker run --rm style:cov > coverage/lcov.info         # lcov.info extrahieren
+docker build --target style-coverage-check .           # Threshold: 95 %
+docker build --target style-publish-check .
+docker build --target style-doc -t mapstyler_style:doc .
+docker run --rm mapstyler_style:doc | tar -xzf -       # API-Docs extrahieren
+```
+
+### mapstyler_mapbox_parser
+
+```bash
+docker build --target mapbox-analyze .
+docker build --target mapbox-test .
+docker build --target mapbox-coverage -t mapbox:cov .
+docker run --rm mapbox:cov > coverage/lcov.info        # lcov.info extrahieren
+docker build --target mapbox-coverage-check .          # Threshold: 95 %
+docker build --target mapbox-publish-check .
+```
+
+### mapstyler_sld_adapter
+
+```bash
+docker build --target sld-analyze .
+docker build --target sld-test .
+docker build --target sld-coverage -t sld:cov .
+docker run --rm sld:cov > coverage/lcov.info           # lcov.info extrahieren
+docker build --target sld-coverage-check .             # Threshold: 95 %
+docker build --target sld-publish-check .
+```
+
+### qml4dart
+
+```bash
+docker build --target qml-analyze .
+docker build --target qml-test .
+docker build --target qml-publish-check .
+```
+
+### mapstyler_qml_adapter
+
+```bash
+docker build --target qml-adapter-analyze .
+docker build --target qml-adapter-test .
+docker build --target qml-adapter-publish-check .
+```
+
+### flutter_mapstyler
+
+```bash
+docker build --target flutter-analyze .
+docker build --target flutter-test .
+docker build --target flutter-coverage -t flutter:cov .
+docker run --rm flutter:cov > coverage/lcov.info       # lcov.info extrahieren
+docker build --target flutter-coverage-check .         # Threshold: 95 %
+docker build --target flutter-publish-check .
+```
+
+Der Coverage-Threshold lässt sich per Build-Arg anpassen, z. B.:
+
+```bash
+docker build --target style-coverage-check --build-arg COVERAGE_MIN=90 .
+```
+
 ## Lizenz
 
 MIT — siehe [LICENSE](LICENSE).
