@@ -76,8 +76,11 @@
 List<String> _parseArgs(String s, String prefix) =>
     s.substring(prefix.length, s.length - 1).split(',').map((p) => p.trim().replaceAll('%', '')).toList();
 
+final _hexDigit = RegExp(r'^[0-9a-f]+$');
+
 ({String hex, double? opacity})? _parseHex(String s) {
   var h = s.substring(1);
+  if (!_hexDigit.hasMatch(h)) return null;
   if (h.length == 3) {
     h = '${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}';
   } else if (h.length == 4) {
