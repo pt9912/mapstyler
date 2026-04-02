@@ -1,6 +1,7 @@
 # Dart/Flutter
 .dart_tool/
 .packages
+.metadata
 build/
 pubspec.lock
 
