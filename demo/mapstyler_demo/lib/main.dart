@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'caching_tile_provider.dart';
 import 'demo_data.dart';
+import 'style_editor.dart';
 import 'widgets.dart';
 
 void main() {
@@ -44,6 +45,8 @@ class _DemoHomePageState extends State<DemoHomePage> {
     cacheDir: Directory('${Directory.systemTemp.path}/mapstyler_tiles'),
   );
   DemoStyleKind _selectedKind = DemoStyleKind.manual;
+  bool _showEditor = false;
+  final _editedStyles = <DemoStyleKind, StyleSummary>{};
 
   @override
   void dispose() {
@@ -85,7 +88,8 @@ class _DemoHomePageState extends State<DemoHomePage> {
               }
 
               final data = snapshot.requireData;
-              final currentStyle = data.styles[_selectedKind]!;
+              final currentSummary =
+                  _editedStyles[_selectedKind] ?? data.styles[_selectedKind]!;
 
               return LayoutBuilder(
                 builder: (context, constraints) {
@@ -98,9 +102,27 @@ class _DemoHomePageState extends State<DemoHomePage> {
                     onStyleSelected: (value) {
                       setState(() => _selectedKind = value);
                     },
+                    showEditor: _showEditor,
+                    onToggleEditor: () {
+                      setState(() => _showEditor = !_showEditor);
+                    },
+                    editor: _showEditor
+                        ? StyleEditor(
+                            style: currentSummary.style,
+                            onChanged: (newStyle) {
+                              setState(() {
+                                _editedStyles[_selectedKind] = StyleSummary(
+                                  title: currentSummary.title,
+                                  style: newStyle,
+                                  notes: currentSummary.notes,
+                                );
+                              });
+                            },
+                          )
+                        : null,
                   );
                   final preview = PreviewPanel(
-                    styleSummary: currentStyle,
+                    styleSummary: currentSummary,
                     features: data.features,
                     tileProvider: _tileProvider,
                   );

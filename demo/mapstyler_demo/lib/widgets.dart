@@ -12,11 +12,17 @@ class OverviewPanel extends StatelessWidget {
     required this.data,
     required this.selectedKind,
     required this.onStyleSelected,
+    this.showEditor = false,
+    this.onToggleEditor,
+    this.editor,
   });
 
   final DemoData data;
   final DemoStyleKind selectedKind;
   final ValueChanged<DemoStyleKind> onStyleSelected;
+  final bool showEditor;
+  final VoidCallback? onToggleEditor;
+  final Widget? editor;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +91,42 @@ class OverviewPanel extends StatelessWidget {
               ],
             ),
           ),
+          if (onToggleEditor != null) ...[
+            const SizedBox(height: 12),
+            SectionCard(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: onToggleEditor,
+                    child: Row(
+                      children: [
+                        Icon(
+                          showEditor ? Icons.edit_off : Icons.edit,
+                          size: 18,
+                          color: const Color(0xFF0B7285),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          showEditor ? 'Editor schliessen' : 'Style bearbeiten',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0B7285),
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (editor != null) ...[
+                    const SizedBox(height: 16),
+                    editor!,
+                  ],
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           for (var index = 0; index < data.packages.length; index++) ...[
             PackageCard(
