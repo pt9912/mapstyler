@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'caching_tile_provider.dart';
 import 'demo_data.dart';
+import 'sample_geodata.dart';
 import 'style_editor.dart';
 import 'widgets.dart';
 
@@ -40,13 +41,24 @@ class DemoHomePage extends StatefulWidget {
 }
 
 class _DemoHomePageState extends State<DemoHomePage> {
-  late final Future<DemoData> _demoFuture = loadDemoData();
   late final CachingTileProvider _tileProvider = CachingTileProvider(
     cacheDir: Directory('${Directory.systemTemp.path}/mapstyler_tiles'),
   );
+  Future<DemoData>? _demoFuture;
+  FeatureSource _featureSource = FeatureSource.hardcoded;
   DemoStyleKind _selectedKind = DemoStyleKind.manual;
   bool _showEditor = false;
   final _editedStyles = <DemoStyleKind, StyleSummary>{};
+
+  Future<DemoData> _loadData() =>
+      _demoFuture ??= loadDemoData(featureSource: _featureSource);
+
+  void _switchFeatureSource(FeatureSource source) {
+    setState(() {
+      _featureSource = source;
+      _demoFuture = null; // neu laden
+    });
+  }
 
   @override
   void dispose() {
@@ -70,7 +82,7 @@ class _DemoHomePageState extends State<DemoHomePage> {
         ),
         child: SafeArea(
           child: FutureBuilder<DemoData>(
-            future: _demoFuture,
+            future: _loadData(),
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
                 return const Center(child: CircularProgressIndicator());
@@ -102,6 +114,8 @@ class _DemoHomePageState extends State<DemoHomePage> {
                     onStyleSelected: (value) {
                       setState(() => _selectedKind = value);
                     },
+                    featureSource: _featureSource,
+                    onFeatureSourceChanged: _switchFeatureSource,
                     showEditor: _showEditor,
                     onToggleEditor: () {
                       setState(() => _showEditor = !_showEditor);

@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:mapstyler_style/mapstyler_style.dart';
 
 import 'demo_data.dart';
+import 'sample_geodata.dart';
 
 class OverviewPanel extends StatelessWidget {
   const OverviewPanel({
@@ -15,6 +16,8 @@ class OverviewPanel extends StatelessWidget {
     this.showEditor = false,
     this.onToggleEditor,
     this.editor,
+    this.featureSource = FeatureSource.hardcoded,
+    this.onFeatureSourceChanged,
   });
 
   final DemoData data;
@@ -23,6 +26,8 @@ class OverviewPanel extends StatelessWidget {
   final bool showEditor;
   final VoidCallback? onToggleEditor;
   final Widget? editor;
+  final FeatureSource featureSource;
+  final ValueChanged<FeatureSource>? onFeatureSourceChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +75,24 @@ class OverviewPanel extends StatelessWidget {
                     onStyleSelected(selection.single);
                   },
                 ),
+                if (onFeatureSourceChanged != null) ...[
+                  const SizedBox(height: 12),
+                  SegmentedButton<FeatureSource>(
+                    showSelectedIcon: false,
+                    segments: FeatureSource.values
+                        .map(
+                          (s) => ButtonSegment<FeatureSource>(
+                            value: s,
+                            label: Text(s.label),
+                          ),
+                        )
+                        .toList(growable: false),
+                    selected: {featureSource},
+                    onSelectionChanged: (selection) {
+                      onFeatureSourceChanged!(selection.single);
+                    },
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Text(
                   selectedStyle.title,

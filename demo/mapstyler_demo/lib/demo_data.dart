@@ -8,6 +8,7 @@ import 'package:mapstyler_sld_adapter/mapstyler_sld_adapter.dart';
 import 'package:mapstyler_style/mapstyler_style.dart';
 import 'package:qml4dart/qml4dart.dart';
 
+import 'sample_geodata.dart';
 import 'sample_styles.dart';
 
 enum DemoStyleKind {
@@ -56,7 +57,9 @@ class StyleSummary {
   final List<String> notes;
 }
 
-Future<DemoData> loadDemoData() async {
+Future<DemoData> loadDemoData({
+  FeatureSource featureSource = FeatureSource.hardcoded,
+}) async {
   final manualStyle = Style.fromJson(manualStyleJson);
   final manualJson = manualStyle.toJsonString();
 
@@ -121,7 +124,7 @@ Future<DemoData> loadDemoData() async {
       throw StateError('SLD-Adapter fehlgeschlagen: ${errors.join(', ')}'),
   };
 
-  final features = buildDemoFeatures();
+  final features = loadFeatures(featureSource);
 
   return DemoData(
     features: features,
