@@ -41,19 +41,55 @@ class StyleRenderer {
   /// Callbacks are attached to rendered features when supported by the
   /// generated layer type. When [viewport] is set, only features whose
   /// geometries intersect the current view bounds are rendered.
+  ///
+  /// [renderBuffer] erweitert den Viewport um den angegebenen Faktor
+  /// (z.B. 0.1 = 10% auf jeder Seite), damit Features am Rand nicht
+  /// bei kleinen Pans erscheinen/verschwinden. Standard: 0.1.
+  ///
+  /// **Frame-Cache**: Wenn sich Viewport, Zoom und Feature-Collection seit
+  /// dem letzten Aufruf nicht geaendert haben, werden die gecachten Layer
+  /// zurueckgegeben (kein Re-Rendering).
   List<Widget> renderStyle({
     required Style style,
     required StyledFeatureCollection features,
     double? scaleDenominator,
     LatLngBounds? viewport,
+    double renderBuffer = 0.1,
     FeatureTapCallback? onFeatureTap,
     FeatureLongPressCallback? onFeatureLongPress,
   }) {
+    final cache = _compiledStyleCache[style] ??= _CompiledStyleCache();
+
+    // Frame-Cache: pruefe ob sich seit dem letzten Render etwas geaendert hat.
+    // Nur aktiv wenn ein Viewport gesetzt ist (Hauptanwendungsfall: kein
+    // Re-Rendering bei unveraendertem Pan/Zoom).
+    // Der Key nutzt den unbuffered Viewport (den Input-Wert), waehrend die
+    // Session den buffered Viewport fuer die tatsaechliche Abfrage bekommt.
+    final useFrameCache = viewport != null;
+    _FrameCacheKey? frameKey;
+    if (useFrameCache) {
+      frameKey = _FrameCacheKey(
+        viewport: viewport,
+        scaleDenominator: scaleDenominator,
+        featuresIdentity: identityHashCode(features),
+        hasCallbacks: onFeatureTap != null || onFeatureLongPress != null,
+      );
+      final cached = cache.lastFrame;
+      if (cached != null && cached.key == frameKey) {
+        return cached.layers;
+      }
+    }
+
+    final bufferedViewport = viewport != null && renderBuffer > 0
+        ? _expandBounds(viewport, renderBuffer)
+        : viewport;
+
     final session = _RenderSession(
       style: style,
-      compiledStyleCache: _compiledStyleCache[style] ??= _CompiledStyleCache(),
+      compiledStyleCache: cache,
       scaleDenominator: scaleDenominator,
-      viewport: viewport,
+      viewport: bufferedViewport,
+      featureCollection: features,
     );
 
     final rules = scaleDenominator != null
@@ -70,6 +106,12 @@ class StyleRenderer {
         onFeatureLongPress: onFeatureLongPress,
       ));
     }
+
+    // Frame-Cache aktualisieren.
+    if (useFrameCache) {
+      cache.lastFrame = _CachedFrame(frameKey!, layers);
+    }
+
     return layers;
   }
 
@@ -637,12 +679,14 @@ class _RenderSession {
     this.compiledStyleCache,
     this.scaleDenominator,
     this.viewport,
+    this.featureCollection,
   });
 
   final Style? style;
   final _CompiledStyleCache? compiledStyleCache;
   final double? scaleDenominator;
   final LatLngBounds? viewport;
+  final StyledFeatureCollection? featureCollection;
   final Map<(Rule, int), List<StyledFeature>> _ruleFeatureCache = {};
   final Map<(int, int), List<StyledFeature>> _viewportFeatureCache = {};
   final Map<(Type, int), List<StyledFeature>> _geometryBuckets = {};
@@ -651,6 +695,10 @@ class _RenderSession {
   final Map<Rule, CompiledFilterEvaluator> _compiledFilters = {};
 
   /// Returns only those features whose geometry envelopes intersect the view.
+  ///
+  /// Nutzt den R-Tree-Index der [featureCollection] fuer O(log n)-Abfragen
+  /// wenn verfuegbar. Faellt auf linearen Scan zurueck wenn keine Collection
+  /// gesetzt ist.
   List<StyledFeature> featuresForViewport(List<StyledFeature> features) {
     final viewportEnvelope = _viewportEnvelope;
     if (viewportEnvelope == null) return features;
@@ -659,6 +707,14 @@ class _RenderSession {
       viewport.hashCode,
     );
     return _viewportFeatureCache.putIfAbsent(key, () {
+      // R-Tree-Pfad: nutzt den raeumlichen Index der Collection.
+      final collection = featureCollection;
+      if (collection != null &&
+          identical(features, collection.features)) {
+        return collection.getFeaturesInExtent(viewportEnvelope);
+      }
+
+      // Fallback: linearer Scan.
       return features
           .where(
             (feature) => _geometryIntersectsViewport(
@@ -778,6 +834,49 @@ class _CompiledStyleCache {
   final Map<Object, Function> expressionEvaluators = {};
   final Map<Rule, CompiledFilterEvaluator> filterEvaluators = {};
   final Map<(Object, int, int, int), Object?> expressionResultCache = {};
+
+  /// Frame-Cache: letztes Rendering-Ergebnis. Wird wiederverwendet wenn
+  /// sich Viewport, Zoom und Features nicht geaendert haben.
+  _CachedFrame? lastFrame;
+}
+
+/// Schluessel fuer den Frame-Cache.
+class _FrameCacheKey {
+  const _FrameCacheKey({
+    required this.viewport,
+    required this.scaleDenominator,
+    required this.featuresIdentity,
+    required this.hasCallbacks,
+  });
+
+  final LatLngBounds? viewport;
+  final double? scaleDenominator;
+  final int featuresIdentity;
+
+  /// Ob Tap/LongPress-Callbacks gesetzt sind. Layers mit Callbacks enthalten
+  /// GestureDetector-Wrapper die ohne Callbacks fehlen — bei Aenderung muss
+  /// neu gerendert werden.
+  final bool hasCallbacks;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _FrameCacheKey &&
+          viewport == other.viewport &&
+          scaleDenominator == other.scaleDenominator &&
+          featuresIdentity == other.featuresIdentity &&
+          hasCallbacks == other.hasCallbacks;
+
+  @override
+  int get hashCode =>
+      Object.hash(viewport, scaleDenominator, featuresIdentity, hasCallbacks);
+}
+
+/// Gecachtes Rendering-Ergebnis eines Frames.
+class _CachedFrame {
+  const _CachedFrame(this.key, this.layers);
+  final _FrameCacheKey key;
+  final List<Widget> layers;
 }
 
 /// Adds gesture handling to geometry layers that do not expose per-feature
@@ -1180,6 +1279,22 @@ double _distanceToSegment(Offset point, Offset a, Offset b) {
   final clamped = t.clamp(0.0, 1.0);
   final projection = Offset(a.dx + dx * clamped, a.dy + dy * clamped);
   return (point - projection).distance;
+}
+
+/// Erweitert [bounds] um [factor] auf jeder Seite (z.B. 0.1 = 10%).
+LatLngBounds _expandBounds(LatLngBounds bounds, double factor) {
+  final dLat = (bounds.north - bounds.south) * factor;
+  final dLng = (bounds.east - bounds.west) * factor;
+  return LatLngBounds(
+    LatLng(
+      (bounds.south - dLat).clamp(-90.0, 90.0),
+      (bounds.west - dLng).clamp(-180.0, 180.0),
+    ),
+    LatLng(
+      (bounds.north + dLat).clamp(-90.0, 90.0),
+      (bounds.east + dLng).clamp(-180.0, 180.0),
+    ),
+  );
 }
 
 /// Viewport culling currently uses geometry envelopes as a fast prefilter.

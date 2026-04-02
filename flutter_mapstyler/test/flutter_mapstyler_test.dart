@@ -245,6 +245,173 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // RTree
+  // ---------------------------------------------------------------------------
+  group('RTree', () {
+    test('empty tree returns no results', () {
+      final tree = RTree.bulk([]);
+      expect(tree.length, 0);
+      expect(
+        tree.search(const EnvelopeGeometry(
+          minX: -180, minY: -90, maxX: 180, maxY: 90,
+        )),
+        isEmpty,
+      );
+      expect(
+        tree.any(const EnvelopeGeometry(
+          minX: -180, minY: -90, maxX: 180, maxY: 90,
+        )),
+        isFalse,
+      );
+    });
+
+    test('single point is found', () {
+      final tree = RTree.bulk(const [PointGeometry(10, 20)]);
+      expect(tree.length, 1);
+
+      final hits = tree.search(const EnvelopeGeometry(
+        minX: 5, minY: 15, maxX: 15, maxY: 25,
+      ));
+      expect(hits, [0]);
+
+      expect(
+        tree.any(const EnvelopeGeometry(
+          minX: 5, minY: 15, maxX: 15, maxY: 25,
+        )),
+        isTrue,
+      );
+    });
+
+    test('point outside search area is not found', () {
+      final tree = RTree.bulk(const [PointGeometry(10, 20)]);
+      final hits = tree.search(const EnvelopeGeometry(
+        minX: 50, minY: 50, maxX: 60, maxY: 60,
+      ));
+      expect(hits, isEmpty);
+    });
+
+    test('bulk loading with many features returns correct results', () {
+      // 100 Punkte im Raster 0..9 x 0..9
+      final geometries = <Geometry>[
+        for (var x = 0; x < 10; x++)
+          for (var y = 0; y < 10; y++)
+            PointGeometry(x.toDouble(), y.toDouble()),
+      ];
+      final tree = RTree.bulk(geometries);
+      expect(tree.length, 100);
+
+      // Suche im Bereich [2,2] bis [4,4] → 3x3 = 9 Punkte
+      final hits = tree.search(const EnvelopeGeometry(
+        minX: 2, minY: 2, maxX: 4, maxY: 4,
+      ));
+      expect(hits, hasLength(9));
+
+      // Alle gefundenen Indizes muessen gueltige Punkte im Bereich sein.
+      for (final i in hits) {
+        final p = geometries[i] as PointGeometry;
+        expect(p.x, inInclusiveRange(2, 4));
+        expect(p.y, inInclusiveRange(2, 4));
+      }
+    });
+
+    test('works with mixed geometry types', () {
+      final tree = RTree.bulk(const [
+        PointGeometry(5, 5),
+        LineStringGeometry([(0, 0), (10, 10)]),
+        PolygonGeometry([[(20, 20), (30, 20), (30, 30), (20, 30), (20, 20)]]),
+      ]);
+      expect(tree.length, 3);
+
+      // Nur Polygon-Bereich abfragen.
+      final hits = tree.search(const EnvelopeGeometry(
+        minX: 25, minY: 25, maxX: 35, maxY: 35,
+      ));
+      expect(hits, [2]);
+
+      // Bereich der Punkt und Linie ueberlappt.
+      final hits2 = tree.search(const EnvelopeGeometry(
+        minX: 4, minY: 4, maxX: 6, maxY: 6,
+      ));
+      expect(hits2.toSet(), {0, 1});
+    });
+
+    test('any returns false when nothing matches', () {
+      final tree = RTree.bulk(const [
+        PointGeometry(0, 0),
+        PointGeometry(1, 1),
+      ]);
+      expect(
+        tree.any(const EnvelopeGeometry(
+          minX: 50, minY: 50, maxX: 60, maxY: 60,
+        )),
+        isFalse,
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // SpatialIndex / StyledFeatureCollection.getFeaturesInExtent
+  // ---------------------------------------------------------------------------
+  group('StyledFeatureCollection spatial index', () {
+    test('getFeaturesInExtent returns matching features', () {
+      const col = StyledFeatureCollection([
+        StyledFeature(id: 'a', geometry: PointGeometry(10, 20)),
+        StyledFeature(id: 'b', geometry: PointGeometry(50, 60)),
+        StyledFeature(id: 'c', geometry: PointGeometry(10, 21)),
+      ]);
+
+      final result = col.getFeaturesInExtent(const EnvelopeGeometry(
+        minX: 5, minY: 15, maxX: 15, maxY: 25,
+      ));
+      expect(result.map((f) => f.id).toSet(), {'a', 'c'});
+    });
+
+    test('getFeaturesInExtent on empty collection returns empty', () {
+      const col = StyledFeatureCollection([]);
+      final result = col.getFeaturesInExtent(const EnvelopeGeometry(
+        minX: -180, minY: -90, maxX: 180, maxY: 90,
+      ));
+      expect(result, isEmpty);
+    });
+
+    test('spatialIndex is reused across calls', () {
+      const col = StyledFeatureCollection([
+        StyledFeature(geometry: PointGeometry(1, 2)),
+      ]);
+      final index1 = col.spatialIndex;
+      final index2 = col.spatialIndex;
+      expect(identical(index1, index2), isTrue);
+    });
+
+    test('polygon features are found by extent intersection', () {
+      const col = StyledFeatureCollection([
+        StyledFeature(
+          id: 'park',
+          geometry: PolygonGeometry([
+            [(10, 10), (20, 10), (20, 20), (10, 20), (10, 10)],
+          ]),
+        ),
+        StyledFeature(
+          id: 'road',
+          geometry: LineStringGeometry([(30, 30), (40, 40)]),
+        ),
+      ]);
+
+      // Nur Park-Bereich abfragen.
+      final result = col.getFeaturesInExtent(const EnvelopeGeometry(
+        minX: 12, minY: 12, maxX: 18, maxY: 18,
+      ));
+      expect(result.map((f) => f.id), ['park']);
+
+      // Nur Road-Bereich.
+      final result2 = col.getFeaturesInExtent(const EnvelopeGeometry(
+        minX: 35, minY: 35, maxX: 45, maxY: 45,
+      ));
+      expect(result2.map((f) => f.id), ['road']);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // StyleRenderer
   // ---------------------------------------------------------------------------
   group('StyleRenderer', () {
