@@ -22,7 +22,7 @@ geostyler-style (Kern-Typen, ~2.200 Zeilen, 0 Dependencies)
 ```
 mapstyler_style (Kern-Typen, basierend auf GeoStyler + eigene Erweiterungen)
     ↑
-    ├── mapstyler_mapbox_parser   (basierend auf GeoStyler TS)
+    ├── mapstyler_mapbox_adapter   (basierend auf GeoStyler TS)
     ├── mapstyler_sld_adapter     (Mapping-Layer auf flutter_map_sld)
     ├── mapstyler_qml_adapter     (Adapter von qml4dart nach mapstyler_style, optional)
     └── mapstyler_lyrx_parser     (basierend auf GeoStyler TS, optional)
@@ -455,7 +455,7 @@ class ReadStyleFailure extends ReadStyleResult {
 }
 ```
 
-### Phase 2 – `mapstyler_mapbox_parser`
+### Phase 2 – `mapstyler_mapbox_adapter`
 
 **Ziel:** Konvertierung Mapbox GL Style JSON ↔ GeoStyler.
 
@@ -582,7 +582,7 @@ SLD XML ──→ flutter_map_sld (bestehender Parser) ──→ flutter_map_sld
 | Phase | Package | TS-Zeilen | Geschätzt Dart | Aufwand | Wert |
 |---|---|---|---|---|---|
 | 1 | `mapstyler_style` | 2.200 | 2.500–3.500 | Mittel | Kritisch |
-| 2 | `mapstyler_mapbox_parser` | 2.400 | 2.500–3.000 | Mittel | Sehr hoch |
+| 2 | `mapstyler_mapbox_adapter` | 2.400 | 2.500–3.000 | Mittel | Sehr hoch |
 | 3 | `mapstyler_sld_adapter` | – | 800–1.200 | Niedrig–Mittel | Hoch |
 | 4 | `qml4dart` | – | 1.500–2.500 | Mittel | Moderat |
 | 5 | `mapstyler_qml_adapter` | – | 600–1.200 | Niedrig–Mittel | Moderat |
@@ -864,7 +864,7 @@ mapstyler/
 │   │       └── parser.dart             # StyleParser<T>, ReadStyleResult, WriteStyleResult
 │   ├── test/
 │   └── pubspec.yaml
-├── mapstyler_mapbox_parser/        # Phase 2
+├── mapstyler_mapbox_adapter/        # Phase 2
 │   ├── lib/
 │   │   └── src/
 │   │       ├── mapbox_style_parser.dart

@@ -25,7 +25,7 @@ und übernimmt ausschließlich die semantische Transformation.
 
 Hinweis zum aktuellen Repo-Stand:
 Im Workspace existiert derzeit ein Platzhalter-Package
-`mapstyler_mapbox_parser`. Fachlich ist hiermit das in diesem Dokument
+`mapstyler_mapbox_adapter`. Fachlich ist hiermit das in diesem Dokument
 beschriebene Adapter-Package gemeint, bis das Naming vereinheitlicht ist.
 
 ## Paketgrenzen

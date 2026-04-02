@@ -1,6 +1,6 @@
-import 'package:mapstyler_mapbox_parser/src/read/expression_mapper.dart';
-import 'package:mapstyler_mapbox_parser/src/read/filter_mapper.dart';
-import 'package:mapstyler_mapbox_parser/src/read/zoom_mapper.dart';
+import 'package:mapstyler_mapbox_adapter/src/read/expression_mapper.dart';
+import 'package:mapstyler_mapbox_adapter/src/read/filter_mapper.dart';
+import 'package:mapstyler_mapbox_adapter/src/read/zoom_mapper.dart';
 import 'package:mapstyler_style/mapstyler_style.dart' as ms;
 import 'package:test/test.dart';
 

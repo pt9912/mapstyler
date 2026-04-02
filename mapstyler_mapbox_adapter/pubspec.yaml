@@ -1,5 +1,5 @@
-name: mapstyler_mapbox_parser
-description: Mapbox GL Style JSON parser for the mapstyler ecosystem. Converts Mapbox styles to and from mapstyler_style types.
+name: mapstyler_mapbox_adapter
+description: Mapbox GL Style adapter for the mapstyler ecosystem. Converts Mapbox styles to and from mapstyler_style types.
 version: 0.1.0
 publish_to: none
 resolution: workspace

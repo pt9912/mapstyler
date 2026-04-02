@@ -10,7 +10,7 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 | ----------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
 | [`mapstyler_style`](mapstyler_style/)                 | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | 🚧 In Arbeit |
 | [`mapbox4dart`](mapbox4dart/)                         | Pure-Dart-Codec und Objektmodell für Mapbox GL Style JSON         | geplant     |
-| [`mapstyler_mapbox_parser`](mapstyler_mapbox_parser/) | Mapbox GL Style JSON ↔ mapstyler                                  | geplant     |
+| [`mapstyler_mapbox_adapter`](mapstyler_mapbox_adapter/) | Mapbox GL Style JSON ↔ mapstyler                                  | geplant     |
 | [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | geplant     |
 | [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | geplant     |
 
@@ -18,7 +18,7 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 
 ```
 SLD XML ──→ flutter_map_sld ──→ mapstyler_sld_adapter ──┐
-Mapbox JSON ──→ mapbox4dart ──→ mapstyler_mapbox_parser ─┤
+Mapbox JSON ──→ mapbox4dart ──→ mapstyler_mapbox_adapter ─┤
                                                          ▼
                                                   mapstyler_style
                                                  (pure Dart Typen)
@@ -81,7 +81,7 @@ docker build --target style-doc -t mapstyler_style:doc .
 docker run --rm mapstyler_style:doc | tar -xzf -       # API-Docs extrahieren
 ```
 
-### mapstyler_mapbox_parser
+### mapstyler_mapbox_adapter
 
 ```bash
 docker build --target mapbox-analyze .

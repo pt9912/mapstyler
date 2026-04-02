@@ -1,4 +1,4 @@
-# mapstyler_mapbox_parser
+# mapstyler_mapbox_adapter
 
 Converts Mapbox GL Style JSON into [mapstyler_style](https://github.com/pt9912/mapstyler/tree/main/mapstyler_style) types and back. Uses [mapbox4dart](https://github.com/pt9912/mapstyler/tree/main/mapbox4dart) internally for JSON parsing — that dependency is not exposed in the public API.
 
@@ -18,7 +18,7 @@ Pure Dart — no Flutter dependency.
 ## Usage
 
 ```dart
-import 'package:mapstyler_mapbox_parser/mapstyler_mapbox_parser.dart';
+import 'package:mapstyler_mapbox_adapter/mapstyler_mapbox_adapter.dart';
 import 'package:mapstyler_style/mapstyler_style.dart';
 
 final adapter = MapboxStyleAdapter();

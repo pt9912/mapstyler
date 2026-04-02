@@ -6,7 +6,7 @@ Flutter-Package, das `mapstyler_style`-Typen in `flutter_map`-Layer und -Styles 
 
 ```
 SLD XML ─→ flutter_map_sld ─→ mapstyler_sld_adapter ─┐
-Mapbox JSON ─→ mapstyler_mapbox_parser ───────────────┤
+Mapbox JSON ─→ mapstyler_mapbox_adapter ───────────────┤
                                                       ▼
                                                mapstyler_style
                                               (pure Dart Typen)
@@ -183,7 +183,7 @@ dependencies:
     sdk: flutter
 ```
 
-Keine Abhängigkeit auf `flutter_map_sld`, `mapstyler_mapbox_parser` o.ä. — das Package arbeitet nur mit den abstrakten `mapstyler_style`-Typen.
+Keine Abhängigkeit auf `flutter_map_sld`, `mapstyler_mapbox_adapter` o.ä. — das Package arbeitet nur mit den abstrakten `mapstyler_style`-Typen.
 
 ## Abgrenzung zu flutter_map_sld_flutter_map
 

@@ -1,5 +1,5 @@
 import 'package:mapbox4dart/mapbox4dart.dart' as mb;
-import 'package:mapstyler_mapbox_parser/src/write/symbolizer_mapper.dart';
+import 'package:mapstyler_mapbox_adapter/src/write/symbolizer_mapper.dart';
 import 'package:mapstyler_style/mapstyler_style.dart' as ms;
 import 'package:test/test.dart';
 

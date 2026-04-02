@@ -51,7 +51,7 @@ jobs:
       - run: docker build --target style-doc .
 
   # ---------------------------------------------------------------------------
-  # mapstyler_mapbox_parser
+  # mapstyler_mapbox_adapter
   # ---------------------------------------------------------------------------
   # mapbox-analyze:
   #   name: Mapbox – Analyze

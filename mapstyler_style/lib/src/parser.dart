@@ -6,7 +6,7 @@ import 'style.dart';
 /// SLD types) and mapstyler's [Style] – the common intermediate format.
 ///
 /// Implementations:
-/// - `mapstyler_mapbox_parser` — Mapbox GL Style JSON.
+/// - `mapstyler_mapbox_adapter` — Mapbox GL Style JSON.
 /// - `mapstyler_sld_adapter` — SLD via `flutter_map_sld`.
 abstract class StyleParser<T> {
   /// A human-readable name for this parser (e.g. `"Mapbox GL"`).

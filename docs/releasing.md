@@ -8,7 +8,7 @@ Jedes Package hat ein eigenes Tag-Präfix:
 | Package | Tag-Format | Beispiel |
 |---|---|---|
 | `mapstyler_style` | `mapstyler_style-vX.Y.Z` | `mapstyler_style-v0.1.0` |
-| `mapstyler_mapbox_parser` | `mapstyler_mapbox_parser-vX.Y.Z` | `mapstyler_mapbox_parser-v0.1.0` |
+| `mapstyler_mapbox_adapter` | `mapstyler_mapbox_adapter-vX.Y.Z` | `mapstyler_mapbox_adapter-v0.1.0` |
 | `mapstyler_sld_adapter` | `mapstyler_sld_adapter-vX.Y.Z` | `mapstyler_sld_adapter-v0.1.0` |
 | `qml4dart` | `qml4dart-vX.Y.Z` | `qml4dart-v0.1.0` |
 | `mapstyler_qml_adapter` | `mapstyler_qml_adapter-vX.Y.Z` | `mapstyler_qml_adapter-v0.1.0` |
@@ -60,7 +60,7 @@ Für andere Packages analog mit dem jeweiligen Präfix und Docker-Target.
 | Package | analyze | test | coverage-check | publish-check |
 |---|---|---|---|---|
 | mapstyler_style | `style-analyze` | `style-test` | `style-coverage-check` | `style-publish-check` |
-| mapstyler_mapbox_parser | `mapbox-analyze` | `mapbox-test` | `mapbox-coverage-check` | `mapbox-publish-check` |
+| mapstyler_mapbox_adapter | `mapbox-analyze` | `mapbox-test` | `mapbox-coverage-check` | `mapbox-publish-check` |
 | mapstyler_sld_adapter | `sld-analyze` | `sld-test` | `sld-coverage-check` | `sld-publish-check` |
 | qml4dart | `qml-analyze` | `qml-test` | `qml-coverage-check` | `qml-publish-check` |
 | mapstyler_qml_adapter | `qml-adapter-analyze` | `qml-adapter-test` | — | `qml-adapter-publish-check` |

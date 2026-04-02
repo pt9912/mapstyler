@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:mapstyler_mapbox_parser/mapstyler_mapbox_parser.dart';
+import 'package:mapstyler_mapbox_adapter/mapstyler_mapbox_adapter.dart';
 import 'package:mapstyler_style/mapstyler_style.dart';
 import 'package:test/test.dart';
 

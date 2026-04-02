@@ -5,12 +5,12 @@
 /// detail and not exposed.
 ///
 /// ```dart
-/// import 'package:mapstyler_mapbox_parser/mapstyler_mapbox_parser.dart';
+/// import 'package:mapstyler_mapbox_adapter/mapstyler_mapbox_adapter.dart';
 /// import 'package:mapstyler_style/mapstyler_style.dart';
 ///
 /// final adapter = MapboxStyleAdapter();
 /// final result = await adapter.readStyle(mapboxJson);
 /// ```
-library mapstyler_mapbox_parser;
+library mapstyler_mapbox_adapter;
 
 export 'src/mapbox_style_adapter.dart';
