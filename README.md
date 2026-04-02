@@ -9,6 +9,7 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 | Package                                               | Beschreibung                                                      | Status      |
 | ----------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
 | [`mapstyler_style`](mapstyler_style/)                 | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | 🚧 In Arbeit |
+| [`mapbox4dart`](mapbox4dart/)                         | Pure-Dart-Codec und Objektmodell für Mapbox GL Style JSON         | geplant     |
 | [`mapstyler_mapbox_parser`](mapstyler_mapbox_parser/) | Mapbox GL Style JSON ↔ mapstyler                                  | geplant     |
 | [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | geplant     |
 | [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | geplant     |
@@ -17,7 +18,7 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 
 ```
 SLD XML ──→ flutter_map_sld ──→ mapstyler_sld_adapter ──┐
-Mapbox JSON ──→ mapstyler_mapbox_parser ─────────────────┤
+Mapbox JSON ──→ mapbox4dart ──→ mapstyler_mapbox_parser ─┤
                                                          ▼
                                                   mapstyler_style
                                                  (pure Dart Typen)
@@ -92,6 +93,20 @@ docker run --rm mapbox:uncov                           # uncovered extrahieren
 docker build --target mapbox-coverage -t mapbox:cov .
 docker run --rm mapbox:cov > coverage/lcov.info        # lcov.info extrahieren
 docker build --target mapbox-publish-check --no-cache-filter mapbox-publish-check --progress=plain .
+```
+
+### mapbox4dart
+
+```bash
+docker build --target mapbox4dart-analyze .
+docker build --target mapbox4dart-test .
+docker build --target mapbox4dart-coverage --no-cache-filter mapbox4dart-coverage --progress=plain .
+docker build --target mapbox4dart-coverage-check --no-cache-filter mapbox4dart-coverage --progress=plain .
+docker build --target mapbox4dart-coverage-uncovered --no-cache-filter mapbox4dart-coverage-uncovered --progress=plain -t mapbox4dart:uncov .
+docker run --rm mapbox4dart:uncov                        # uncovered extrahieren
+docker build --target mapbox4dart-coverage -t mapbox4dart:cov .
+docker run --rm mapbox4dart:cov > coverage/lcov.info    # lcov.info extrahieren
+docker build --target mapbox4dart-publish-check --no-cache-filter mapbox4dart-publish-check --progress=plain .
 ```
 
 ### mapstyler_sld_adapter

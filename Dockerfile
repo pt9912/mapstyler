@@ -1,7 +1,7 @@
 ## ---------------------------------------------------------------------------
 ## Pure Dart packages
-## (mapstyler_style, mapstyler_mapbox_parser, mapstyler_sld_adapter,
-##  qml4dart, mapstyler_qml_adapter)
+## (mapstyler_style, mapbox4dart, mapstyler_mapbox_parser,
+##  mapstyler_sld_adapter, qml4dart, mapstyler_qml_adapter)
 ## ---------------------------------------------------------------------------
 FROM dart:stable AS base
 
@@ -18,15 +18,17 @@ RUN sed -i '/flutter_mapstyler/d' pubspec.yaml
 
 # Copy package pubspecs for dependency caching
 COPY mapstyler_style/pubspec.yaml mapstyler_style/pubspec.yaml
+COPY mapbox4dart/pubspec.yaml mapbox4dart/pubspec.yaml
 COPY mapstyler_mapbox_parser/pubspec.yaml mapstyler_mapbox_parser/pubspec.yaml
 COPY mapstyler_sld_adapter/pubspec.yaml mapstyler_sld_adapter/pubspec.yaml
 COPY qml4dart/pubspec.yaml qml4dart/pubspec.yaml
 COPY mapstyler_qml_adapter/pubspec.yaml mapstyler_qml_adapter/pubspec.yaml
 
 # Placeholder libs so pub get can resolve
-RUN mkdir -p mapstyler_style/lib mapstyler_mapbox_parser/lib mapstyler_sld_adapter/lib \
+RUN mkdir -p mapstyler_style/lib mapbox4dart/lib mapstyler_mapbox_parser/lib mapstyler_sld_adapter/lib \
     qml4dart/lib mapstyler_qml_adapter/lib \
     && touch mapstyler_style/lib/mapstyler_style.dart \
+    && touch mapbox4dart/lib/mapbox4dart.dart \
     && touch mapstyler_mapbox_parser/lib/mapstyler_mapbox_parser.dart \
     && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart \
     && touch qml4dart/lib/qml4dart.dart \
@@ -36,6 +38,7 @@ RUN dart pub get
 
 # Copy full source
 COPY mapstyler_style/ mapstyler_style/
+COPY mapbox4dart/ mapbox4dart/
 COPY mapstyler_mapbox_parser/ mapstyler_mapbox_parser/
 COPY mapstyler_sld_adapter/ mapstyler_sld_adapter/
 COPY qml4dart/ qml4dart/
@@ -111,6 +114,68 @@ ENTRYPOINT ["cat", "/doc-api.tar.gz"]
 # Publish dry-run
 FROM base AS style-publish-check
 WORKDIR /app/mapstyler_style
+RUN dart pub publish --dry-run
+
+## ---------------------------------------------------------------------------
+## mapbox4dart
+## ---------------------------------------------------------------------------
+
+# Analyze
+FROM base AS mapbox4dart-analyze
+WORKDIR /app/mapbox4dart
+RUN dart analyze
+
+# Test
+FROM base AS mapbox4dart-test
+WORKDIR /app/mapbox4dart
+RUN dart test
+
+# Coverage
+FROM base AS mapbox4dart-coverage
+ARG COVERAGE_VERSION=1.15.0
+RUN dart pub global activate coverage ${COVERAGE_VERSION}
+ENV PATH="/root/.pub-cache/bin:${PATH}"
+WORKDIR /app/mapbox4dart
+RUN dart test --coverage=coverage
+RUN dart pub global run coverage:format_coverage \
+    --package=. \
+    --report-on=lib \
+    --lcov \
+    --in=coverage \
+    --out=coverage/lcov.info
+RUN lcov --summary coverage/lcov.info
+ENTRYPOINT ["cat", "coverage/lcov.info"]
+
+# Coverage threshold uncovered lines
+FROM mapbox4dart-coverage AS mapbox4dart-coverage-uncovered
+RUN awk -F'[,:]' '\
+    /^SF:/ { file=substr($0,4) } \
+    /^DA:/ { total[file]++; if ($3 > 0) hit[file]++; else uncov[file]=uncov[file] " " $2 } \
+    END { for (f in total) { \
+    h=hit[f]+0; t=total[f]; \
+    printf "%.1f%% (%d/%d) %s\n", (h/t)*100, h, t, f; \
+    if (h < t) printf "  uncovered lines:%s\n", uncov[f]; \
+    } }' coverage/lcov.info | sort -t'%' -k1 -n >uncovered.txt
+ENTRYPOINT ["cat", "uncovered.txt"]
+
+# Coverage threshold check
+FROM mapbox4dart-coverage AS mapbox4dart-coverage-check
+ARG COVERAGE_MIN=95
+RUN awk -F'[,:]' -v min="$COVERAGE_MIN" '\
+    /^DA:/ { total += 1; if ($3 > 0) hit += 1 } \
+    END { \
+    if (total == 0) { \
+    print "No coverage data found in coverage/lcov.info"; \
+    exit 1; \
+    } \
+    pct = (hit / total) * 100; \
+    printf "Line coverage: %.2f%% (threshold %.2f%%)\n", pct, min; \
+    if (pct < min) { exit 2 } \
+    }' coverage/lcov.info
+
+# Publish dry-run
+FROM base AS mapbox4dart-publish-check
+WORKDIR /app/mapbox4dart
 RUN dart pub publish --dry-run
 
 ## ---------------------------------------------------------------------------
