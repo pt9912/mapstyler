@@ -10,4 +10,5 @@ export 'src/expression_evaluator.dart' show evaluateExpression;
 export 'src/feature.dart';
 export 'src/filter_evaluator.dart' show evaluateFilter;
 export 'src/mark_painter.dart';
+export 'src/rtree.dart' show RTree;
 export 'src/style_renderer.dart';
