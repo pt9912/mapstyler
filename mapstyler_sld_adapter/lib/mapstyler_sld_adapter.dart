@@ -1,20 +1,16 @@
 /// SLD adapter for the mapstyler ecosystem.
 ///
-/// Maps between `flutter_map_sld` types and `mapstyler_style` types,
-/// enabling SLD support without writing a new SLD parser.
+/// Parses SLD XML into mapstyler_style types. The underlying SLD parser
+/// (`flutter_map_sld`) is an implementation detail and not exposed.
 ///
 /// ```dart
-/// import 'package:flutter_map_sld/flutter_map_sld.dart';
 /// import 'package:mapstyler_sld_adapter/mapstyler_sld_adapter.dart';
+/// import 'package:mapstyler_style/mapstyler_style.dart';
 ///
-/// // Parse SLD XML via flutter_map_sld, then convert to mapstyler types.
-/// final parseResult = SldDocument.parseXmlString(sldXml);
 /// final parser = SldStyleParser();
-/// final result = await parser.readStyle(parseResult.document!);
+/// final result = await parser.readStyle(sldXml);
 /// ```
 library mapstyler_sld_adapter;
 
 export 'src/color_util.dart';
 export 'src/sld_style_parser.dart';
-export 'src/sld_to_mapstyler.dart' show convertDocument;
-export 'src/mapstyler_to_sld.dart' show convertStyle;

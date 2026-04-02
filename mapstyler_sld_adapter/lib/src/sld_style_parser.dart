@@ -1,39 +1,36 @@
-/// StyleParser implementation for SLD via flutter_map_sld.
 import 'package:flutter_map_sld/flutter_map_sld.dart' as sld;
 import 'package:mapstyler_style/mapstyler_style.dart';
 
-import 'mapstyler_to_sld.dart' as write;
 import 'sld_to_mapstyler.dart' as read;
 
-/// Converts between [sld.SldDocument] and mapstyler [Style].
+/// Parses SLD XML into mapstyler [Style] objects.
 ///
-/// **Read:** Accepts an [sld.SldDocument] (produced by
-/// `SldDocument.parseXmlString()`) and converts it to a [Style].
-///
-/// **Write:** Converts a [Style] to an [sld.SldDocument] (model objects,
-/// not XML — flutter_map_sld does not provide XML serialization).
+/// Internally uses `flutter_map_sld` for XML parsing, but that dependency
+/// is not exposed in the public API.
 ///
 /// ```dart
 /// final parser = SldStyleParser();
+/// final result = await parser.readStyle(sldXml);
 ///
-/// // Read SLD
-/// final parseResult = SldDocument.parseXmlString(sldXml);
-/// final result = await parser.readStyle(parseResult.document!);
-///
-/// // Write back
-/// final writeResult = await parser.writeStyle(style);
+/// if (result case ReadStyleSuccess(:final output)) {
+///   for (final rule in output.rules) {
+///     print('${rule.name}: ${rule.symbolizers.length} symbolizers');
+///   }
+/// }
 /// ```
-class SldStyleParser implements StyleParser<sld.SldDocument> {
+class SldStyleParser {
   const SldStyleParser();
 
-  @override
+  /// Human-readable name for this parser.
   String get title => 'SLD';
 
-  @override
-  Future<ReadStyleResult> readStyle(sld.SldDocument input) async =>
-      read.convertDocument(input);
-
-  @override
-  Future<WriteStyleResult<sld.SldDocument>> writeStyle(Style style) async =>
-      write.convertStyle(style);
+  /// Parses an SLD XML string and converts it to a mapstyler [Style].
+  Future<ReadStyleResult> readStyle(String sldXml) async {
+    final parseResult = sld.SldDocument.parseXmlString(sldXml);
+    if (parseResult.document == null) {
+      final messages = parseResult.issues.map((i) => i.message).toList();
+      return ReadStyleFailure(errors: messages);
+    }
+    return read.convertDocument(parseResult.document!);
+  }
 }

@@ -3,7 +3,8 @@
 /// operators, composite expression round-trips, and edge cases.
 import 'package:flutter_map_sld/flutter_map_sld.dart' as sld;
 import 'package:gml4dart/gml4dart.dart' as gml;
-import 'package:mapstyler_sld_adapter/mapstyler_sld_adapter.dart';
+import 'package:mapstyler_sld_adapter/src/mapstyler_to_sld.dart';
+import 'package:mapstyler_sld_adapter/src/sld_to_mapstyler.dart';
 import 'package:mapstyler_style/mapstyler_style.dart' as ms;
 import 'package:test/test.dart';
 
