@@ -444,6 +444,7 @@ COPY pubspec.yaml pubspec.yaml
 
 # Copy all package pubspecs (workspace needs all members)
 COPY mapstyler_style/pubspec.yaml mapstyler_style/pubspec.yaml
+COPY mapbox4dart/pubspec.yaml mapbox4dart/pubspec.yaml
 COPY mapstyler_mapbox_parser/pubspec.yaml mapstyler_mapbox_parser/pubspec.yaml
 COPY mapstyler_sld_adapter/pubspec.yaml mapstyler_sld_adapter/pubspec.yaml
 COPY qml4dart/pubspec.yaml qml4dart/pubspec.yaml
@@ -451,10 +452,11 @@ COPY mapstyler_qml_adapter/pubspec.yaml mapstyler_qml_adapter/pubspec.yaml
 COPY flutter_mapstyler/pubspec.yaml flutter_mapstyler/pubspec.yaml
 
 # Placeholder libs so pub get can resolve
-RUN mkdir -p mapstyler_style/lib mapstyler_mapbox_parser/lib \
+RUN mkdir -p mapstyler_style/lib mapbox4dart/lib mapstyler_mapbox_parser/lib \
     mapstyler_sld_adapter/lib qml4dart/lib mapstyler_qml_adapter/lib \
     flutter_mapstyler/lib \
     && touch mapstyler_style/lib/mapstyler_style.dart \
+    && touch mapbox4dart/lib/mapbox4dart.dart \
     && touch mapstyler_mapbox_parser/lib/mapstyler_mapbox_parser.dart \
     && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart \
     && touch qml4dart/lib/qml4dart.dart \
@@ -465,6 +467,7 @@ RUN flutter pub get
 
 # Copy full source
 COPY mapstyler_style/ mapstyler_style/
+COPY mapbox4dart/ mapbox4dart/
 COPY mapstyler_mapbox_parser/ mapstyler_mapbox_parser/
 COPY mapstyler_sld_adapter/ mapstyler_sld_adapter/
 COPY qml4dart/ qml4dart/
