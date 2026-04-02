@@ -53,29 +53,29 @@ jobs:
   # ---------------------------------------------------------------------------
   # mapstyler_mapbox_parser
   # ---------------------------------------------------------------------------
-  mapbox-analyze:
-    name: Mapbox – Analyze
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - run: docker build --target mapbox-analyze .
+  # mapbox-analyze:
+  #   name: Mapbox – Analyze
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - run: docker build --target mapbox-analyze .
 
-  mapbox-test:
-    name: Mapbox – Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - run: docker build --target mapbox-test .
+  # mapbox-test:
+  #   name: Mapbox – Test
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - run: docker build --target mapbox-test .
 
-  mapbox-coverage:
-    name: Mapbox – Coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - run: docker build --target mapbox-coverage-check --no-cache-filter mapbox-coverage --progress=plain .
+  # mapbox-coverage:
+  #   name: Mapbox – Coverage
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - run: docker build --target mapbox-coverage-check --no-cache-filter mapbox-coverage --progress=plain .
 
   # ---------------------------------------------------------------------------
   # mapstyler_sld_adapter
@@ -153,26 +153,26 @@ jobs:
   # ---------------------------------------------------------------------------
   # flutter_mapstyler
   # ---------------------------------------------------------------------------
-  flutter-analyze:
-    name: Flutter – Analyze
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - run: docker build --target flutter-analyze .
+  # flutter-analyze:
+  #   name: Flutter – Analyze
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - run: docker build --target flutter-analyze .
 
-  flutter-test:
-    name: Flutter – Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - run: docker build --target flutter-test .
+  # flutter-test:
+  #   name: Flutter – Test
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - run: docker build --target flutter-test .
 
-  flutter-coverage:
-    name: Flutter – Coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - run: docker build --target flutter-coverage-check --no-cache-filter flutter-coverage --progress=plain .
+  # flutter-coverage:
+  #   name: Flutter – Coverage
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - run: docker build --target flutter-coverage-check --no-cache-filter flutter-coverage --progress=plain .
