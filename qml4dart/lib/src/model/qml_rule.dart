@@ -1,20 +1,35 @@
-import 'qml_symbol.dart';
-
-/// Rule in a QGIS renderer.
+/// Rule in a QGIS rule-based renderer.
 class QmlRule {
   const QmlRule({
-    this.name,
+    this.key,
+    this.symbolKey,
+    this.label,
     this.filter,
     this.scaleMinDenominator,
     this.scaleMaxDenominator,
-    this.symbols = const <QmlSymbol>[],
-    this.properties = const <String, String>{},
+    this.enabled = true,
+    this.children = const <QmlRule>[],
   });
 
-  final String? name;
+  /// Unique rule identifier.
+  final String? key;
+
+  /// Key referencing a symbol in the renderer's symbol map.
+  /// Null for grouping-only rules.
+  final String? symbolKey;
+
+  /// Display label.
+  final String? label;
+
+  /// QGIS filter expression string.
   final String? filter;
+
   final double? scaleMinDenominator;
   final double? scaleMaxDenominator;
-  final List<QmlSymbol> symbols;
-  final Map<String, String> properties;
+
+  /// Whether this rule is active (`checkstate` != "0").
+  final bool enabled;
+
+  /// Nested child rules for hierarchical filtering.
+  final List<QmlRule> children;
 }

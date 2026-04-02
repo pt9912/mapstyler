@@ -4,13 +4,23 @@ import 'qml_renderer.dart';
 class QmlDocument {
   const QmlDocument({
     this.version,
-    this.name,
     required this.renderer,
-    this.customProperties = const <String, String>{},
+    this.hasScaleBasedVisibility = false,
+    this.maxScale,
+    this.minScale,
   });
 
+  /// QGIS version string from the root element.
   final String? version;
-  final String? name;
+
   final QmlRenderer renderer;
-  final Map<String, String> customProperties;
+
+  /// Whether layer-level scale visibility is enabled.
+  final bool hasScaleBasedVisibility;
+
+  /// Most zoomed-in scale denominator.
+  final double? maxScale;
+
+  /// Most zoomed-out scale denominator.
+  final double? minScale;
 }
