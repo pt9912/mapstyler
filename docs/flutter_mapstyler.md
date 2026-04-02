@@ -55,6 +55,7 @@ class StyleRenderer {
     required Style style,
     required StyledFeatureCollection features,
     double? scaleDenominator,
+    LatLngBounds? viewport,
     FeatureTapCallback? onFeatureTap,
     FeatureLongPressCallback? onFeatureLongPress,
   });
@@ -63,6 +64,7 @@ class StyleRenderer {
   List<Widget> renderRule({
     required Rule rule,
     required List<StyledFeature> features,
+    LatLngBounds? viewport,
     FeatureTapCallback? onFeatureTap,
     FeatureLongPressCallback? onFeatureLongPress,
   });
@@ -72,6 +74,7 @@ class StyleRenderer {
   Widget? symbolizerToLayer({
     required Symbolizer symbolizer,
     required List<StyledFeature> features,
+    LatLngBounds? viewport,
     FeatureTapCallback? onFeatureTap,
     FeatureLongPressCallback? onFeatureLongPress,
   });
@@ -84,8 +87,8 @@ class StyleRenderer {
 
 ```dart
 /// Wertet eine Expression gegen Feature-Properties aus.
-T evaluateExpression<T>(
-  Expression<T> expression,
+T? evaluateExpression<T>(
+  Expression<T>? expression,
   Map<String, Object?> properties,
 );
 
@@ -103,7 +106,7 @@ Regeln mit Filtern werden nur auf passende Features angewandt:
 ```dart
 /// Prüft ob ein Feature den Filter erfüllt.
 bool evaluateFilter(
-  Filter filter,
+  Filter? filter,
   Map<String, Object?> properties, {
   Geometry? geometry, // für Spatial Filters
 });
@@ -262,7 +265,7 @@ Prioritäten:
 
 - Expressions und Filter einmal in auswertbare Strukturen überführen
 - Features früh nach Geometrietyp vorfiltern
-- Optional Viewport-basiert nur sichtbare Features berücksichtigen
+- Viewport-basiert nur sichtbare Features berücksichtigen
 - Punktsymbole und Labels nicht unkontrolliert als tausende Widgets erzeugen
 
 Clustering ist **keine Kernaufgabe des Renderers**. Wenn benötigt, sollte
@@ -296,7 +299,7 @@ Empfohlene Cache-Ebenen:
 
 - Kompilierte Expressions und Filter pro `Style`
 - Vorausgewählte Regeln pro Scale-/Zoom-Bereich
-- Aufgelöste Symbolizer-Werte pro `featureId + symbolizer + zoomBucket`, wenn eine stabile `id` vorhanden ist
+- Aufgelöste Symbolizer-Werte pro `featureId + expression + propertySignature + scaleBucket`, wenn eine stabile `id` vorhanden ist
 
 Wenn ein Feature keine stabile `id` hat, sind nur kurzlebige Caches innerhalb
 eines einzelnen Render-Durchlaufs sinnvoll. Persistente per-Feature-Caches
@@ -317,6 +320,7 @@ API eher folgende Richtung:
 
 ```dart
 import 'package:flutter/widgets.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:mapstyler_style/mapstyler_style.dart';
 
 typedef FeatureTapCallback = void Function(StyledFeature feature);
@@ -329,11 +333,30 @@ class StyleRenderer {
     required Style style,
     required StyledFeatureCollection features,
     double? scaleDenominator,
+    LatLngBounds? viewport,
     FeatureTapCallback? onFeatureTap,
     FeatureLongPressCallback? onFeatureLongPress,
   });
 }
 ```
+
+## Umsetzungsstand
+
+Der aktuelle Implementierungsstand deckt die Kernpunkte der Doku ab:
+
+- `StyledFeature` und `StyledFeatureCollection` bilden das rendererinterne Datenmodell
+- `StyleRenderer` rendert in Regelreihenfolge und unterstützt `renderStyle`, `renderRule` und `symbolizerToLayer`
+- optionales Viewport-Culling ist über `LatLngBounds viewport` im Renderpfad verfügbar
+- Expressions und Filter werden pro `Style` in wiederverwendbare Evaluator-Closures vorbereitet
+- per-Feature-Expression-Ergebnisse werden persistent pro `featureId + expression + propertySignature + scaleBucket` gecacht
+- Fill, Line, Mark, Icon, Text und Raster sind auf `flutter_map`-Layer abgebildet
+- Feature-Tap und Long-Press sind für Marker sowie Geometrie-Layer unterstützt
+
+Der Expression-Evaluator unterstützt aktuell neben `property`, `case`, `step`
+und `interpolate` auch einen breiten Satz dokumentierter `ArgsFunction`-Namen
+für numerische, String- und Bool-Operationen. Unbekannte Funktionen liefern
+weiterhin `null`, damit der Renderer bei neuen oder formatspezifischen
+Funktionen defensiv bleibt.
 
 ## Implementierungsreihenfolge
 
