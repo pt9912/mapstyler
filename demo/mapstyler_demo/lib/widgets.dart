@@ -178,7 +178,6 @@ class PreviewPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const renderer = StyleRenderer();
     final fittedBounds = featureBounds(features);
 
     return SectionCard(
@@ -256,7 +255,7 @@ class PreviewPanel extends StatelessWidget {
                               keepBuffer: 5,
                               panBuffer: 3,
                             ),
-                            ...renderer.renderStyle(
+                            _StyledFeatureLayers(
                               style: styleSummary.style,
                               features: features,
                               onFeatureTap: (feature) {
@@ -507,6 +506,43 @@ LatLngBounds featureBounds(StyledFeatureCollection collection) {
   }
 
   return LatLngBounds.fromPoints(points);
+}
+
+/// Rendert die gestylten Feature-Layers mit Viewport aus [MapCamera].
+///
+/// Lebt als Kind von [FlutterMap], damit [MapCamera.of] den aktuellen
+/// Karten-Zustand liefert. Dadurch werden R-Tree, renderBuffer und
+/// Frame-Cache automatisch genutzt.
+class _StyledFeatureLayers extends StatelessWidget {
+  const _StyledFeatureLayers({
+    required this.style,
+    required this.features,
+    this.onFeatureTap,
+  });
+
+  final Style style;
+  final StyledFeatureCollection features;
+  final FeatureTapCallback? onFeatureTap;
+
+  static const _renderer = StyleRenderer();
+
+  @override
+  Widget build(BuildContext context) {
+    final camera = MapCamera.of(context);
+    final viewport = camera.visibleBounds;
+
+    final layers = _renderer.renderStyle(
+      style: style,
+      features: features,
+      viewport: viewport,
+      onFeatureTap: onFeatureTap,
+    );
+
+    // Stack statt Column: die Layers sind flutter_map-Layers und muessen
+    // direkt als FlutterMap-children gerendert werden. Da wir ein einzelnes
+    // Widget zurueckgeben muessen, wrappen wir sie in einen Stack.
+    return Stack(children: layers);
+  }
 }
 
 class PreviewBackdropPainter extends CustomPainter {
