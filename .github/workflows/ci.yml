@@ -153,26 +153,26 @@ jobs:
   # ---------------------------------------------------------------------------
   # flutter_mapstyler
   # ---------------------------------------------------------------------------
-  # flutter-analyze:
-  #   name: Flutter – Analyze
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 20
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #     - run: docker build --target flutter-analyze .
+  flutter-analyze:
+    name: Flutter – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target flutter-analyze .
 
-  # flutter-test:
-  #   name: Flutter – Test
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 20
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #     - run: docker build --target flutter-test .
+  flutter-test:
+    name: Flutter – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target flutter-test .
 
-  # flutter-coverage:
-  #   name: Flutter – Coverage
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 20
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #     - run: docker build --target flutter-coverage-check --no-cache-filter flutter-coverage --progress=plain .
+  flutter-coverage:
+    name: Flutter – Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target flutter-coverage-check --no-cache-filter flutter-coverage --progress=plain .

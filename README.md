@@ -75,7 +75,7 @@ docker build --target style-coverage-uncovered --no-cache-filter style-coverage-
 docker run --rm style:uncov # uncoverd extrahieren
 docker build --target style-coverage -t style:cov .
 docker run --rm style:cov > coverage/lcov.info         # lcov.info extrahieren
-docker build --target style-publish-check .
+docker build --target style-publish-check --no-cache-filter style-publish-check --progress=plain .
 docker build --target style-doc -t mapstyler_style:doc .
 docker run --rm mapstyler_style:doc | tar -xzf -       # API-Docs extrahieren
 ```
@@ -91,7 +91,7 @@ docker build --target mapbox-coverage-uncovered --no-cache-filter mapbox-coverag
 docker run --rm mapbox:uncov                           # uncovered extrahieren
 docker build --target mapbox-coverage -t mapbox:cov .
 docker run --rm mapbox:cov > coverage/lcov.info        # lcov.info extrahieren
-docker build --target mapbox-publish-check .
+docker build --target mapbox-publish-check --no-cache-filter mapbox-publish-check --progress=plain .
 ```
 
 ### mapstyler_sld_adapter
@@ -105,7 +105,7 @@ docker build --target sld-coverage-uncovered --no-cache-filter sld-coverage-unco
 docker run --rm sld:uncov                              # uncovered extrahieren
 docker build --target sld-coverage -t sld:cov .
 docker run --rm sld:cov > coverage/lcov.info           # lcov.info extrahieren
-docker build --target sld-publish-check .
+docker build --target sld-publish-check --no-cache-filter sld-publish-check --progress=plain .
 ```
 
 ### qml4dart
@@ -147,7 +147,7 @@ docker build --target flutter-coverage-uncovered --no-cache-filter flutter-cover
 docker run --rm flutter:uncov                          # uncovered extrahieren
 docker build --target flutter-coverage -t flutter:cov .
 docker run --rm flutter:cov > coverage/lcov.info       # lcov.info extrahieren
-docker build --target flutter-publish-check .
+docker build --target flutter-publish-check --no-cache-filter flutter-publish-check --progress=plain .
 ```
 
 Der Coverage-Threshold lässt sich per Build-Arg anpassen, z. B.:
