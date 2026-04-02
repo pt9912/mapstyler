@@ -100,13 +100,21 @@ class CachingTileProvider extends TileProvider {
 
   @override
   void dispose() {
+    // flutter_map ruft dispose() auf wenn TileLayer aus dem Tree entfernt
+    // wird (z.B. bei FutureBuilder-Rebuild). Den HTTP-Client dabei NICHT
+    // schliessen -- er wird beim naechsten TileLayer wiederverwendet.
+    super.dispose();
+  }
+
+  /// Schliesst den HTTP-Client endgueltig.
+  /// Nur von der App aufrufen wenn der Provider nicht mehr gebraucht wird.
+  void close() {
     _dio?.close();
     _dio = null;
     for (final c in _waitQueue) {
-      c.completeError(StateError('Provider disposed'));
+      c.completeError(StateError('Provider closed'));
     }
     _waitQueue.clear();
-    super.dispose();
   }
 }
 

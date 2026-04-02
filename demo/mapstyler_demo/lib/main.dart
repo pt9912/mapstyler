@@ -62,7 +62,7 @@ class _DemoHomePageState extends State<DemoHomePage> {
 
   @override
   void dispose() {
-    _tileProvider.dispose();
+    _tileProvider.close();
     super.dispose();
   }
 
