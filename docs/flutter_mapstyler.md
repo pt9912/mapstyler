@@ -42,29 +42,38 @@ Konvertierung von `mapstyler_style`-Symbolizern in flutter_map-kompatible Darste
 import 'package:flutter_map/flutter_map.dart';
 import 'package:mapstyler_style/mapstyler_style.dart';
 
+typedef FeatureTapCallback = void Function(StyledFeature feature);
+typedef FeatureLongPressCallback = void Function(StyledFeature feature);
+
 /// Konvertiert mapstyler-Regeln in flutter_map-Layer.
 class StyleRenderer {
   const StyleRenderer();
 
-  /// Wendet einen kompletten Style auf GeoJSON-Features an.
+  /// Wendet einen kompletten Style auf Features an.
   /// Gibt eine geordnete Liste von flutter_map-Layern zurück.
   List<Widget> renderStyle({
     required Style style,
-    required FeatureCollection features,
+    required StyledFeatureCollection features,
     double? scaleDenominator,
+    FeatureTapCallback? onFeatureTap,
+    FeatureLongPressCallback? onFeatureLongPress,
   });
 
   /// Wendet eine einzelne Regel auf passende Features an.
   List<Widget> renderRule({
     required Rule rule,
-    required List<Feature> features,
+    required List<StyledFeature> features,
+    FeatureTapCallback? onFeatureTap,
+    FeatureLongPressCallback? onFeatureLongPress,
   });
 
-  /// Konvertiert einen einzelnen Symbolizer in Layer-Optionen.
+  /// Konvertiert einen einzelnen Symbolizer in einen flutter_map-Layer.
   /// Nützlich für eigene Rendering-Pipelines.
-  LayerOptions? symbolizerToLayer({
+  Widget? symbolizerToLayer({
     required Symbolizer symbolizer,
-    required List<Feature> features,
+    required List<StyledFeature> features,
+    FeatureTapCallback? onFeatureTap,
+    FeatureLongPressCallback? onFeatureLongPress,
   });
 }
 ```
@@ -77,7 +86,7 @@ class StyleRenderer {
 /// Wertet eine Expression gegen Feature-Properties aus.
 T evaluateExpression<T>(
   Expression<T> expression,
-  Map<String, dynamic> properties,
+  Map<String, Object?> properties,
 );
 
 // Beispiel:
@@ -95,7 +104,7 @@ Regeln mit Filtern werden nur auf passende Features angewandt:
 /// Prüft ob ein Feature den Filter erfüllt.
 bool evaluateFilter(
   Filter filter,
-  Map<String, dynamic> properties, {
+  Map<String, Object?> properties, {
   Geometry? geometry, // für Spatial Filters
 });
 ```
@@ -187,23 +196,156 @@ Keine Abhängigkeit auf `flutter_map_sld`, `mapstyler_mapbox_parser` o.ä. — d
 
 Langfristig könnte `flutter_map_sld_flutter_map` auf `flutter_mapstyler` aufbauen, indem es SLD → mapstyler_style → flutter_map rendert.
 
-## Offene Design-Fragen
+## Architekturentscheidungen
 
-1. **GeoJSON-Modell:** Welches GeoJSON-Package nutzen? (`geojson_vi`, `dart_geojson`, eigenes?) Oder Feature-Daten als `Map<String, dynamic>` + Koordinaten-Listen?
-2. **Layer-Strategie:** Ein Layer pro Symbolizer-Typ (Fill, Line, Mark) oder ein kombinierter Layer pro Regel?
-3. **Performance:** Wie mit großen Feature-Sammlungen umgehen? Lazy Evaluation? Clustering für Marker?
-4. **Interaktivität:** Soll der Renderer Tap-Callbacks pro Feature unterstützen?
-5. **Caching:** Berechnete Styles cachen? Expression-Ergebnisse pro Feature memorisieren?
+### 1. Feature- und Geometriemodell
+
+`flutter_mapstyler` nutzt im Kern **kein externes GeoJSON-Package**. Das
+Package rendert gegen ein kleines, stabiles Feature-Modell und verwendet
+für Geometrien das bereits vorhandene `mapstyler_style`-Modell.
+
+Damit bleibt die API unabhängig von Parser- und Austauschformaten.
+GeoJSON, SLD, Mapbox oder QML werden außerhalb des Renderers in dieses
+interne Modell übersetzt.
+
+```dart
+import 'package:mapstyler_style/mapstyler_style.dart';
+
+/// Minimales Feature-Modell für flutter_mapstyler.
+final class StyledFeature {
+  final Object? id;
+  final Geometry geometry;
+  final Map<String, Object?> properties;
+
+  const StyledFeature({
+    this.id,
+    required this.geometry,
+    this.properties = const {},
+  });
+}
+
+/// Explizite Feature-Sammlung statt Bindung an ein GeoJSON-Package.
+final class StyledFeatureCollection {
+  final List<StyledFeature> features;
+
+  const StyledFeatureCollection(this.features);
+}
+```
+
+Konsequenz:
+
+- Keine harte Abhängigkeit auf `geojson_vi`, `dart_geojson` oder ähnliche Packages
+- Adapter von Fremdformaten bleiben in separaten Packages oder Hilfsmodulen
+- Renderer-API bleibt langfristig stabil, auch wenn sich GeoJSON-Libraries ändern
+
+### 2. Layer-Strategie
+
+Die Style-Reihenfolge aus `Style.rules` und `Rule.symbolizers` ist
+verbindlich. Deshalb rendert `flutter_mapstyler` **nicht global einen
+Layer pro Symbolizer-Typ**.
+
+Stattdessen:
+
+- Rendern in Regelreihenfolge
+- Intern ein Render-Batch pro `Rule + Symbolizer`
+- Spätere Optimierung nur durch Zusammenfassen benachbarter, kompatibler Batches
+
+Das ist für das MVP einfacher, korrekt bezüglich Z-Order und gut
+erweiterbar.
+
+### 3. Performance-Strategie
+
+Performance wird zuerst über Datenfluss und Vorverarbeitung gelöst, nicht
+über allgemeine Lazy-Evaluation im gesamten Renderer.
+
+Prioritäten:
+
+- Expressions und Filter einmal in auswertbare Strukturen überführen
+- Features früh nach Geometrietyp vorfiltern
+- Optional Viewport-basiert nur sichtbare Features berücksichtigen
+- Punktsymbole und Labels nicht unkontrolliert als tausende Widgets erzeugen
+
+Clustering ist **keine Kernaufgabe des Renderers**. Wenn benötigt, sollte
+es als optionale, vorgelagerte Datenstrategie oder spätere Erweiterung
+kommen.
+
+### 4. Interaktivität
+
+Der Renderer soll optionale Feature-Interaktion unterstützen, aber
+Interaktivität darf den statischen Renderpfad nicht belasten.
+
+Vorgesehene API-Richtung:
+
+```dart
+typedef FeatureTapCallback = void Function(StyledFeature feature);
+typedef FeatureLongPressCallback = void Function(StyledFeature feature);
+```
+
+Konsequenz:
+
+- Feature-Interaktion nur aktiv, wenn Callbacks gesetzt sind
+- Feature-Ids sind empfohlen, damit Selektion und Wiedererkennung stabil bleiben
+- Hit-Testing wird pro Layer-Typ gezielt ergänzt, nicht als globaler Sonderfall
+
+### 5. Caching
+
+Caching ist sinnvoll, aber gezielt. Ein pauschales Memoizing jeder
+Expression pro Feature wäre zu grob und schwer korrekt invalidierbar.
+
+Empfohlene Cache-Ebenen:
+
+- Kompilierte Expressions und Filter pro `Style`
+- Vorausgewählte Regeln pro Scale-/Zoom-Bereich
+- Aufgelöste Symbolizer-Werte pro `featureId + symbolizer + zoomBucket`, wenn eine stabile `id` vorhanden ist
+
+Wenn ein Feature keine stabile `id` hat, sind nur kurzlebige Caches innerhalb
+eines einzelnen Render-Durchlaufs sinnvoll. Persistente per-Feature-Caches
+sollten dann deaktiviert bleiben.
+
+Voraussetzung für aggressiveres Caching ist ein klar definiertes
+Invalidierungsmodell:
+
+- Style geändert
+- Feature-Properties geändert
+- Zoom-/Scale-Bereich gewechselt
+- Viewport geändert, falls viewport-basiertes Culling aktiv ist
+
+### Empfohlene Kern-API
+
+Mit den obigen Entscheidungen ergibt sich statt einer GeoJSON-gebundenen
+API eher folgende Richtung:
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:mapstyler_style/mapstyler_style.dart';
+
+typedef FeatureTapCallback = void Function(StyledFeature feature);
+typedef FeatureLongPressCallback = void Function(StyledFeature feature);
+
+class StyleRenderer {
+  const StyleRenderer();
+
+  List<Widget> renderStyle({
+    required Style style,
+    required StyledFeatureCollection features,
+    double? scaleDenominator,
+    FeatureTapCallback? onFeatureTap,
+    FeatureLongPressCallback? onFeatureLongPress,
+  });
+}
+```
 
 ## Implementierungsreihenfolge
 
-1. **Expression-Evaluator** — `evaluateExpression<T>()` für Literal + PropertyGet
-2. **Filter-Evaluator** — `evaluateFilter()` für Comparison + Combination + Negation
-3. **FillSymbolizer → PolygonLayer** — einfachster Symbolizer
-4. **LineSymbolizer → PolylineLayer**
-5. **MarkSymbolizer → MarkerLayer** — CustomPaint für Well-Known-Names
-6. **TextSymbolizer → MarkerLayer** — Text-Widget mit Halo
-7. **IconSymbolizer → MarkerLayer** — Image-Widget
-8. **Scale-basierte Regelauswahl**
-9. **StyleRenderer** — Orchestrierung aller Symbolizer
-10. **RasterSymbolizer → TileLayer** (optional, niedrigere Priorität)
+1. **Feature-Modell festziehen** — `StyledFeature` und `StyledFeatureCollection`
+2. **Expression-Evaluator** — `evaluateExpression<T>()` für Literal + PropertyGet
+3. **Filter-Evaluator** — `evaluateFilter()` für Comparison + Combination + Negation
+4. **Scale-basierte Regelauswahl** — aktive Regeln für aktuellen Maßstab
+5. **FillSymbolizer → PolygonLayer** — einfachster Symbolizer
+6. **LineSymbolizer → PolylineLayer**
+7. **MarkSymbolizer → MarkerLayer** — CustomPaint für Well-Known-Names
+8. **TextSymbolizer → MarkerLayer** — Text-Widget mit Halo
+9. **IconSymbolizer → MarkerLayer** — Image-Widget
+10. **StyleRenderer** — Orchestrierung, Batch-Reihenfolge und optionale Interaktion
+11. **Caching-Schicht** — zuerst Rule-/Expression-Caches, dann Symbolizer-Werte
+12. **RasterSymbolizer → TileLayer** (optional, niedrigere Priorität)
