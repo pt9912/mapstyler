@@ -71,6 +71,8 @@ docker build --target style-analyze .
 docker build --target style-test .
 docker build --target style-coverage --no-cache-filter style-coverage --progress=plain .
 docker build --target style-coverage-check --no-cache-filter style-coverage --progress=plain .
+docker build --target style-coverage-uncovered --no-cache-filter style-coverage-uncovered  --progress=plain -t style:uncov . 
+docker run --rm style:uncov # uncoverd extrahieren
 docker build --target style-coverage -t style:cov .
 docker run --rm style:cov > coverage/lcov.info         # lcov.info extrahieren
 docker build --target style-publish-check .
@@ -85,6 +87,8 @@ docker build --target mapbox-analyze .
 docker build --target mapbox-test .
 docker build --target mapbox-coverage --no-cache-filter mapbox-coverage --progress=plain .
 docker build --target mapbox-coverage-check --no-cache-filter mapbox-coverage --progress=plain .
+docker build --target mapbox-coverage-uncovered --no-cache-filter mapbox-coverage-uncovered --progress=plain -t mapbox:uncov .
+docker run --rm mapbox:uncov                           # uncovered extrahieren
 docker build --target mapbox-coverage -t mapbox:cov .
 docker run --rm mapbox:cov > coverage/lcov.info        # lcov.info extrahieren
 docker build --target mapbox-publish-check .
@@ -97,6 +101,8 @@ docker build --target sld-analyze .
 docker build --target sld-test .
 docker build --target sld-coverage --no-cache-filter sld-coverage --progress=plain .
 docker build --target sld-coverage-check --no-cache-filter sld-coverage --progress=plain .
+docker build --target sld-coverage-uncovered --no-cache-filter sld-coverage-uncovered --progress=plain -t sld:uncov .
+docker run --rm sld:uncov                              # uncovered extrahieren
 docker build --target sld-coverage -t sld:cov .
 docker run --rm sld:cov > coverage/lcov.info           # lcov.info extrahieren
 docker build --target sld-publish-check .
@@ -109,6 +115,8 @@ docker build --target qml-analyze .
 docker build --target qml-test .
 docker build --target qml-coverage --no-cache-filter qml-coverage --progress=plain .
 docker build --target qml-coverage-check --no-cache-filter qml-coverage --progress=plain .
+docker build --target qml-coverage-uncovered --no-cache-filter qml-coverage-uncovered --progress=plain -t qml:uncov .
+docker run --rm qml:uncov                              # uncovered extrahieren
 docker build --target qml-coverage -t qml:cov .
 docker run --rm qml:cov > coverage/lcov.info           # lcov.info extrahieren
 docker build --target qml-publish-check --no-cache-filter qml-publish-check --progress=plain .
@@ -129,6 +137,8 @@ docker build --target flutter-analyze .
 docker build --target flutter-test .
 docker build --target flutter-coverage --no-cache-filter flutter-coverage --progress=plain .
 docker build --target flutter-coverage-check --no-cache-filter flutter-coverage --progress=plain .
+docker build --target flutter-coverage-uncovered --no-cache-filter flutter-coverage-uncovered --progress=plain -t flutter:uncov .
+docker run --rm flutter:uncov                          # uncovered extrahieren
 docker build --target flutter-coverage -t flutter:cov .
 docker run --rm flutter:cov > coverage/lcov.info       # lcov.info extrahieren
 docker build --target flutter-publish-check .
