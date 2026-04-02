@@ -443,6 +443,185 @@ void main() {
       expect(style.rules.first.scaleDenominator?.max, 50000);
     });
 
+    test('categorizedSymbol warns on missing symbol', () async {
+      final doc = qml.QmlDocument(
+        renderer: qml.QmlRenderer(
+          type: qml.QmlRendererType.categorizedSymbol,
+          attribute: 'x',
+          symbols: {},
+          categories: [
+            qml.QmlCategory(value: 'a', symbolKey: '99', label: 'Missing'),
+          ],
+        ),
+      );
+      final result = await parser.readStyle(doc);
+      final success = result as ms.ReadStyleSuccess;
+      expect(success.warnings, anyElement(contains('symbol 99 not found')));
+      expect(success.output.rules, isEmpty);
+    });
+
+    test('graduatedSymbol warns on missing symbol', () async {
+      final doc = qml.QmlDocument(
+        renderer: qml.QmlRenderer(
+          type: qml.QmlRendererType.graduatedSymbol,
+          attribute: 'pop',
+          symbols: {},
+          ranges: [
+            qml.QmlRange(lower: 0, upper: 100, symbolKey: '99', label: 'Missing'),
+          ],
+        ),
+      );
+      final result = await parser.readStyle(doc);
+      final success = result as ms.ReadStyleSuccess;
+      expect(success.warnings, anyElement(contains('symbol 99 not found')));
+    });
+
+    test('unknown renderer type produces warning', () async {
+      final doc = qml.QmlDocument(
+        renderer: const qml.QmlRenderer(type: qml.QmlRendererType.unknown),
+      );
+      final result = await parser.readStyle(doc);
+      final success = result as ms.ReadStyleSuccess;
+      expect(success.warnings, anyElement(contains('Unknown renderer type')));
+    });
+
+    test('ruleRenderer warns on missing symbol', () async {
+      final doc = qml.QmlDocument(
+        renderer: qml.QmlRenderer(
+          type: qml.QmlRendererType.ruleRenderer,
+          symbols: {},
+          rules: [
+            qml.QmlRule(key: 'r0', symbolKey: '99', label: 'Bad'),
+          ],
+        ),
+      );
+      final result = await parser.readStyle(doc);
+      final success = result as ms.ReadStyleSuccess;
+      expect(success.warnings, anyElement(contains('symbol 99 not found')));
+    });
+
+    test('ruleRenderer warns on unparseable filter', () async {
+      final doc = qml.QmlDocument(
+        renderer: qml.QmlRenderer(
+          type: qml.QmlRendererType.ruleRenderer,
+          symbols: {
+            '0': const qml.QmlSymbol(type: qml.QmlSymbolType.marker),
+          },
+          rules: [
+            qml.QmlRule(
+              key: 'r0',
+              symbolKey: '0',
+              label: 'Complex',
+              filter: 'CASE WHEN x THEN y END',
+            ),
+          ],
+        ),
+      );
+      final result = await parser.readStyle(doc);
+      final success = result as ms.ReadStyleSuccess;
+      expect(success.warnings, anyElement(contains('Could not parse filter')));
+    });
+
+    test('RasterFill and unknown layer type produce warnings', () async {
+      final doc = qml.QmlDocument(
+        renderer: qml.QmlRenderer(
+          type: qml.QmlRendererType.singleSymbol,
+          symbols: {
+            '0': qml.QmlSymbol(
+              type: qml.QmlSymbolType.fill,
+              layers: [
+                qml.QmlSymbolLayer(
+                  type: qml.QmlSymbolLayerType.rasterFill,
+                  className: 'RasterFill',
+                  properties: {},
+                ),
+                qml.QmlSymbolLayer(
+                  type: qml.QmlSymbolLayerType.unknown,
+                  className: 'WeirdLayer',
+                  properties: {},
+                ),
+              ],
+            ),
+          },
+        ),
+      );
+      final result = await parser.readStyle(doc);
+      final success = result as ms.ReadStyleSuccess;
+      expect(success.warnings, anyElement(contains('RasterFill')));
+      expect(success.warnings, anyElement(contains('Unknown symbol layer')));
+    });
+
+    test('marker shape mapping covers all shapes', () async {
+      for (final entry in {
+        'diamond': 'diamond',
+        'triangle': 'triangle',
+        'equilateral_triangle': 'triangle',
+        'star': 'star',
+        'star_diamond': 'star',
+        'cross': 'cross',
+        'cross_fill': 'cross',
+        'cross2': 'x',
+        'x': 'x',
+      }.entries) {
+        final doc = qml.QmlDocument(
+          renderer: qml.QmlRenderer(
+            type: qml.QmlRendererType.singleSymbol,
+            symbols: {
+              '0': qml.QmlSymbol(
+                type: qml.QmlSymbolType.marker,
+                layers: [
+                  qml.QmlSymbolLayer(
+                    type: qml.QmlSymbolLayerType.simpleMarker,
+                    className: 'SimpleMarker',
+                    properties: {'name': entry.key, 'color': '0,0,0,255', 'size': '8'},
+                  ),
+                ],
+              ),
+            },
+          ),
+        );
+        final result = await parser.readStyle(doc);
+        final style = (result as ms.ReadStyleSuccess).output;
+        final mark = style.rules.first.symbolizers.first as ms.MarkSymbolizer;
+        expect(mark.wellKnownName, entry.value, reason: 'QGIS ${entry.key}');
+      }
+    });
+
+    test('comparison operators in filter parsing', () async {
+      for (final entry in {
+        'val >= 10': ms.ComparisonOperator.gte,
+        'val <= 10': ms.ComparisonOperator.lte,
+        'val > 10': ms.ComparisonOperator.gt,
+        'val < 10': ms.ComparisonOperator.lt,
+        'val != 10': ms.ComparisonOperator.neq,
+      }.entries) {
+        final doc = qml.QmlDocument(
+          renderer: qml.QmlRenderer(
+            type: qml.QmlRendererType.ruleRenderer,
+            symbols: {
+              '0': const qml.QmlSymbol(
+                type: qml.QmlSymbolType.fill,
+                layers: [
+                  qml.QmlSymbolLayer(
+                    type: qml.QmlSymbolLayerType.simpleFill,
+                    className: 'SimpleFill',
+                    properties: {'color': '0,0,0,255'},
+                  ),
+                ],
+              ),
+            },
+            rules: [
+              qml.QmlRule(key: 'r', symbolKey: '0', filter: entry.key),
+            ],
+          ),
+        );
+        final result = await parser.readStyle(doc);
+        final style = (result as ms.ReadStyleSuccess).output;
+        final f = style.rules.first.filter as ms.ComparisonFilter;
+        expect(f.operator, entry.value, reason: entry.key);
+      }
+    });
+
     test('multi-layer symbol produces multiple symbolizers', () async {
       final doc = qml.QmlDocument(
         renderer: qml.QmlRenderer(
@@ -637,6 +816,147 @@ void main() {
         success.warnings,
         contains(contains('TextSymbolizer not supported')),
       );
+    });
+
+    test('RasterSymbolizer produces warning', () async {
+      final style = ms.Style(
+        rules: [
+          ms.Rule(
+            symbolizers: [
+              ms.RasterSymbolizer(opacity: ms.LiteralExpression(0.5)),
+            ],
+          ),
+        ],
+      );
+      final result = await parser.writeStyle(style);
+      final success = result as ms.WriteStyleSuccess<qml.QmlDocument>;
+      expect(
+        success.warnings,
+        contains(contains('RasterSymbolizer not supported')),
+      );
+    });
+
+    test('MarkSymbolizer with all fields', () async {
+      final style = ms.Style(
+        rules: [
+          ms.Rule(
+            symbolizers: [
+              ms.MarkSymbolizer(
+                wellKnownName: 'diamond',
+                radius: ms.LiteralExpression(6.0),
+                color: ms.LiteralExpression('#ff0000'),
+                opacity: ms.LiteralExpression(0.8),
+                strokeColor: ms.LiteralExpression('#333333'),
+                strokeWidth: ms.LiteralExpression(1.5),
+                rotate: ms.LiteralExpression(30.0),
+              ),
+            ],
+          ),
+        ],
+      );
+      final result = await parser.writeStyle(style);
+      final doc =
+          (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
+      final props = doc.renderer.symbols['0']!.layers.first.properties;
+      expect(props['name'], 'diamond');
+      expect(props['outline_color'], '51,51,51,255');
+      expect(props['outline_width'], '1.5');
+      expect(props['angle'], '30.0');
+    });
+
+    test('shape mapping covers all WKN values', () async {
+      for (final wkn in ['diamond', 'triangle', 'star', 'cross', 'x']) {
+        final style = ms.Style(
+          rules: [
+            ms.Rule(
+              symbolizers: [
+                ms.MarkSymbolizer(
+                  wellKnownName: wkn,
+                  color: ms.LiteralExpression('#000000'),
+                ),
+              ],
+            ),
+          ],
+        );
+        final result = await parser.writeStyle(style);
+        final doc =
+            (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
+        final name = doc.renderer.symbols['0']!.layers.first.properties['name'];
+        expect(name, isNotNull, reason: wkn);
+      }
+    });
+
+    test('CombinationFilter and NegationFilter in write', () async {
+      final style = ms.Style(
+        rules: [
+          ms.Rule(
+            name: 'Combined',
+            filter: ms.CombinationFilter(
+              operator: ms.CombinationOperator.and,
+              filters: [
+                ms.ComparisonFilter(
+                  operator: ms.ComparisonOperator.gte,
+                  property: ms.LiteralExpression('pop'),
+                  value: ms.LiteralExpression<Object>(1000),
+                ),
+                ms.ComparisonFilter(
+                  operator: ms.ComparisonOperator.lte,
+                  property: ms.LiteralExpression('pop'),
+                  value: ms.LiteralExpression<Object>(5000),
+                ),
+              ],
+            ),
+            symbolizers: [
+              ms.FillSymbolizer(color: ms.LiteralExpression('#ff0000')),
+            ],
+          ),
+          ms.Rule(
+            name: 'Negated',
+            filter: ms.NegationFilter(
+              filter: ms.ComparisonFilter(
+                operator: ms.ComparisonOperator.eq,
+                property: ms.LiteralExpression('hidden'),
+                value: ms.LiteralExpression<Object>(1),
+              ),
+            ),
+            symbolizers: [
+              ms.FillSymbolizer(color: ms.LiteralExpression('#00ff00')),
+            ],
+          ),
+        ],
+      );
+      final result = await parser.writeStyle(style);
+      final doc =
+          (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
+
+      expect(doc.renderer.rules[0].filter, 'pop >= 1000 AND pop <= 5000');
+      expect(doc.renderer.rules[1].filter, "NOT (hidden = 1)");
+    });
+
+    test('FunctionExpression in filter property', () async {
+      final style = ms.Style(
+        rules: [
+          ms.Rule(
+            name: 'FuncExpr',
+            filter: ms.ComparisonFilter(
+              operator: ms.ComparisonOperator.eq,
+              property: ms.FunctionExpression(ms.PropertyGet('name')),
+              value: ms.FunctionExpression<Object>(
+                ms.ArgsFunction(name: 'custom'),
+              ),
+            ),
+            symbolizers: [
+              ms.FillSymbolizer(color: ms.LiteralExpression('#000000')),
+            ],
+          ),
+        ],
+      );
+      final result = await parser.writeStyle(style);
+      final doc =
+          (result as ms.WriteStyleSuccess<qml.QmlDocument>).output;
+
+      expect(doc.renderer.rules.first.filter, contains('name'));
+      expect(doc.renderer.rules.first.filter, contains('custom'));
     });
 
     test('filter with comparison operators', () async {
