@@ -215,10 +215,42 @@ FROM base AS qml-test
 WORKDIR /app/qml4dart
 RUN dart test
 
+# Coverage
+FROM base AS qml-coverage
+ARG COVERAGE_VERSION=1.15.0
+RUN dart pub global activate coverage ${COVERAGE_VERSION}
+ENV PATH="/root/.pub-cache/bin:${PATH}"
+WORKDIR /app/qml4dart
+RUN dart test --coverage=coverage
+RUN dart pub global run coverage:format_coverage \
+    --package=. \
+    --report-on=lib \
+    --lcov \
+    --in=coverage \
+    --out=coverage/lcov.info
+RUN lcov --summary coverage/lcov.info
+ENTRYPOINT ["cat", "coverage/lcov.info"]
+
+# Coverage threshold check
+FROM qml-coverage AS qml-coverage-check
+ARG COVERAGE_MIN=95
+RUN awk -F'[,:]' -v min="$COVERAGE_MIN" '\
+    /^DA:/ { total += 1; if ($3 > 0) hit += 1 } \
+    END { \
+    if (total == 0) { \
+    print "No coverage data found in coverage/lcov.info"; \
+    exit 1; \
+    } \
+    pct = (hit / total) * 100; \
+    printf "Line coverage: %.2f%% (threshold %.2f%%)\n", pct, min; \
+    if (pct < min) { exit 2 } \
+    }' coverage/lcov.info
+
 # Publish dry-run
 FROM base AS qml-publish-check
 WORKDIR /app/qml4dart
 RUN dart pub publish --dry-run
+RUN dart pub outdated
 
 ## ---------------------------------------------------------------------------
 ## mapstyler_qml_adapter

@@ -6,12 +6,12 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 
 ## Packages
 
-| Package | Beschreibung | Status |
-|---|---|---|
-| [`mapstyler_style`](mapstyler_style/) | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | 🚧 In Arbeit |
-| [`mapstyler_mapbox_parser`](mapstyler_mapbox_parser/) | Mapbox GL Style JSON ↔ mapstyler | geplant |
-| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/) | SLD via `flutter_map_sld` ↔ mapstyler | geplant |
-| [`flutter_mapstyler`](flutter_mapstyler/) | Rendering auf `flutter_map` | geplant |
+| Package                                               | Beschreibung                                                      | Status      |
+| ----------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
+| [`mapstyler_style`](mapstyler_style/)                 | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | 🚧 In Arbeit |
+| [`mapstyler_mapbox_parser`](mapstyler_mapbox_parser/) | Mapbox GL Style JSON ↔ mapstyler                                  | geplant     |
+| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | geplant     |
+| [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | geplant     |
 
 ## Architektur
 
@@ -69,9 +69,10 @@ Das Projekt enthält ein Multi-Stage-Dockerfile. Jedes Package hat eigene Target
 ```bash
 docker build --target style-analyze .
 docker build --target style-test .
+docker build --target style-coverage --no-cache-filter style-coverage --progress=plain .
+docker build --target style-coverage-check --no-cache-filter style-coverage --progress=plain .
 docker build --target style-coverage -t style:cov .
 docker run --rm style:cov > coverage/lcov.info         # lcov.info extrahieren
-docker build --target style-coverage-check .           # Threshold: 95 %
 docker build --target style-publish-check .
 docker build --target style-doc -t mapstyler_style:doc .
 docker run --rm mapstyler_style:doc | tar -xzf -       # API-Docs extrahieren
@@ -82,9 +83,10 @@ docker run --rm mapstyler_style:doc | tar -xzf -       # API-Docs extrahieren
 ```bash
 docker build --target mapbox-analyze .
 docker build --target mapbox-test .
+docker build --target mapbox-coverage --no-cache-filter mapbox-coverage --progress=plain .
+docker build --target mapbox-coverage-check --no-cache-filter mapbox-coverage --progress=plain .
 docker build --target mapbox-coverage -t mapbox:cov .
 docker run --rm mapbox:cov > coverage/lcov.info        # lcov.info extrahieren
-docker build --target mapbox-coverage-check .          # Threshold: 95 %
 docker build --target mapbox-publish-check .
 ```
 
@@ -93,9 +95,10 @@ docker build --target mapbox-publish-check .
 ```bash
 docker build --target sld-analyze .
 docker build --target sld-test .
+docker build --target sld-coverage --no-cache-filter sld-coverage --progress=plain .
+docker build --target sld-coverage-check --no-cache-filter sld-coverage --progress=plain .
 docker build --target sld-coverage -t sld:cov .
 docker run --rm sld:cov > coverage/lcov.info           # lcov.info extrahieren
-docker build --target sld-coverage-check .             # Threshold: 95 %
 docker build --target sld-publish-check .
 ```
 
@@ -104,7 +107,11 @@ docker build --target sld-publish-check .
 ```bash
 docker build --target qml-analyze .
 docker build --target qml-test .
-docker build --target qml-publish-check .
+docker build --target qml-coverage --no-cache-filter qml-coverage --progress=plain .
+docker build --target qml-coverage-check --no-cache-filter qml-coverage --progress=plain .
+docker build --target qml-coverage -t qml:cov .
+docker run --rm qml:cov > coverage/lcov.info           # lcov.info extrahieren
+docker build --target qml-publish-check --no-cache-filter qml-publish-check --progress=plain .
 ```
 
 ### mapstyler_qml_adapter
@@ -120,16 +127,17 @@ docker build --target qml-adapter-publish-check .
 ```bash
 docker build --target flutter-analyze .
 docker build --target flutter-test .
+docker build --target flutter-coverage --no-cache-filter flutter-coverage --progress=plain .
+docker build --target flutter-coverage-check --no-cache-filter flutter-coverage --progress=plain .
 docker build --target flutter-coverage -t flutter:cov .
 docker run --rm flutter:cov > coverage/lcov.info       # lcov.info extrahieren
-docker build --target flutter-coverage-check .         # Threshold: 95 %
 docker build --target flutter-publish-check .
 ```
 
 Der Coverage-Threshold lässt sich per Build-Arg anpassen, z. B.:
 
 ```bash
-docker build --target style-coverage-check --build-arg COVERAGE_MIN=90 .
+docker build --target style-coverage-check --no-cache-filter style-coverage --progress=plain --build-arg COVERAGE_MIN=90 .
 ```
 
 ## Lizenz
