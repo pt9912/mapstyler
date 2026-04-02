@@ -6,6 +6,7 @@ environment:
 
 workspace:
   - mapstyler_style
+  - mapbox4dart
   - mapstyler_mapbox_parser
   - mapstyler_sld_adapter
   - qml4dart
