@@ -24,6 +24,7 @@
 library mapstyler_style;
 
 export 'src/expression.dart';
+export 'src/feature.dart';
 export 'src/filter.dart';
 export 'src/function.dart';
 export 'src/geometry.dart';
