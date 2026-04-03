@@ -46,7 +46,7 @@ class StyleEditor extends StatelessWidget {
   void _updateRule(int index, Rule newRule) {
     final newRules = [...style.rules];
     newRules[index] = newRule;
-    onChanged(Style(name: style.name, rules: newRules));
+    onChanged(style.copyWith(rules: newRules));
   }
 }
 
@@ -93,12 +93,7 @@ class _RuleCard extends StatelessWidget {
   void _updateSymbolizer(int index, Symbolizer newSymbolizer) {
     final newSymbolizers = [...rule.symbolizers];
     newSymbolizers[index] = newSymbolizer;
-    onChanged(Rule(
-      name: rule.name,
-      filter: rule.filter,
-      symbolizers: newSymbolizers,
-      scaleDenominator: rule.scaleDenominator,
-    ));
+    onChanged(rule.copyWith(symbolizers: newSymbolizers));
   }
 
   Widget _ruleColorDot(Rule rule) {
@@ -182,13 +177,8 @@ class _FillEditor extends StatelessWidget {
         _ColorRow(
           label: 'Fuellung',
           hex: _literalString(symbolizer.color),
-          onChanged: (hex) => onChanged(FillSymbolizer(
-            color: LiteralExpression(hex),
-            opacity: symbolizer.opacity,
-            fillOpacity: symbolizer.fillOpacity,
-            outlineColor: symbolizer.outlineColor,
-            outlineWidth: symbolizer.outlineWidth,
-          )),
+          onChanged: (hex) => onChanged(
+                symbolizer.copyWith(color: LiteralExpression(hex))),
         ),
         _SliderRow(
           label: 'Opazitaet',
@@ -197,13 +187,8 @@ class _FillEditor extends StatelessWidget {
               1.0,
           min: 0,
           max: 1,
-          onChanged: (v) => onChanged(FillSymbolizer(
-            color: symbolizer.color,
-            opacity: symbolizer.opacity,
-            fillOpacity: LiteralExpression(v),
-            outlineColor: symbolizer.outlineColor,
-            outlineWidth: symbolizer.outlineWidth,
-          )),
+          onChanged: (v) => onChanged(
+                symbolizer.copyWith(fillOpacity: LiteralExpression(v))),
         ),
       ],
     );
@@ -227,28 +212,16 @@ class _LineEditor extends StatelessWidget {
         _ColorRow(
           label: 'Linie',
           hex: _literalString(symbolizer.color),
-          onChanged: (hex) => onChanged(LineSymbolizer(
-            color: LiteralExpression(hex),
-            width: symbolizer.width,
-            opacity: symbolizer.opacity,
-            dasharray: symbolizer.dasharray,
-            cap: symbolizer.cap,
-            join: symbolizer.join,
-          )),
+          onChanged: (hex) => onChanged(
+                symbolizer.copyWith(color: LiteralExpression(hex))),
         ),
         _SliderRow(
           label: 'Breite',
           value: _literalDouble(symbolizer.width) ?? 1.0,
           min: 0.5,
           max: 20,
-          onChanged: (v) => onChanged(LineSymbolizer(
-            color: symbolizer.color,
-            width: LiteralExpression(v),
-            opacity: symbolizer.opacity,
-            dasharray: symbolizer.dasharray,
-            cap: symbolizer.cap,
-            join: symbolizer.join,
-          )),
+          onChanged: (v) => onChanged(
+                symbolizer.copyWith(width: LiteralExpression(v))),
         ),
       ],
     );
@@ -272,30 +245,16 @@ class _MarkEditor extends StatelessWidget {
         _ColorRow(
           label: 'Farbe',
           hex: _literalString(symbolizer.color),
-          onChanged: (hex) => onChanged(MarkSymbolizer(
-            wellKnownName: symbolizer.wellKnownName,
-            radius: symbolizer.radius,
-            color: LiteralExpression(hex),
-            opacity: symbolizer.opacity,
-            strokeColor: symbolizer.strokeColor,
-            strokeWidth: symbolizer.strokeWidth,
-            rotate: symbolizer.rotate,
-          )),
+          onChanged: (hex) => onChanged(
+                symbolizer.copyWith(color: LiteralExpression(hex))),
         ),
         _SliderRow(
           label: 'Radius',
           value: _literalDouble(symbolizer.radius) ?? 6.0,
           min: 2,
           max: 30,
-          onChanged: (v) => onChanged(MarkSymbolizer(
-            wellKnownName: symbolizer.wellKnownName,
-            radius: LiteralExpression(v),
-            color: symbolizer.color,
-            opacity: symbolizer.opacity,
-            strokeColor: symbolizer.strokeColor,
-            strokeWidth: symbolizer.strokeWidth,
-            rotate: symbolizer.rotate,
-          )),
+          onChanged: (v) => onChanged(
+                symbolizer.copyWith(radius: LiteralExpression(v))),
         ),
       ],
     );
