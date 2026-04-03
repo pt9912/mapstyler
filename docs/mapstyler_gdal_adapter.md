@@ -92,11 +92,18 @@ werden dabei kopiert, die Feature-ID um einen Suffix erweitert
 
 ## Geometrie-Vereinfachung (Douglas-Peucker)
 
-Bei grossen Datenmengen muss die Koordinatenmenge so frueh wie moeglich
-reduziert werden. Da `gdal_dart` einen lazy Feature-Iterator bietet,
-ist der fruehestmoegliche Punkt die Iteration selbst: jede Geometrie
-wird waehrend der Konvertierung vereinfacht, bevor sie als
-`StyledFeature` materialisiert wird.
+Die Vereinfachungs-Algorithmen (radiale Vorfilterung +
+Douglas-Peucker fuer Linien, ringspezifische Variante fuer
+Polygone) leben in `mapstyler_style`, nicht im Adapter. Sie
+arbeiten auf `List<(double, double)>` — dem Koordinatenformat
+von `LineStringGeometry` und `PolygonGeometry`. So koennen auch
+andere Consumer (Renderer, Demo-Loader) sie direkt nutzen.
+
+Der Adapter wendet die Vereinfachung **waehrend der Iteration**
+ueber die GDAL-Features an. Da `gdal_dart` einen lazy
+Feature-Iterator bietet, ist die Iteration der fruehestmoegliche
+Punkt: jede Geometrie wird waehrend der Konvertierung
+vereinfacht, bevor sie als `StyledFeature` materialisiert wird.
 
 ```text
 OgrLayer.features (lazy Iterator, volle Aufloesung)
@@ -391,7 +398,7 @@ List<Geometry> _convertGeometry(gd.Geometry geometry, double? tolerance) =>
     switch (geometry) {
       gd.Point(:final x, :final y) => [PointGeometry(x, y)],
       gd.LineString(:final points) => [
-        LineStringGeometry(_simplifyLine(points, tolerance)),
+        LineStringGeometry(_simplifyLineFromPoints(points, tolerance)),
       ],
       gd.Polygon(:final rings) =>
         _convertPolygon(rings, tolerance),
@@ -399,7 +406,7 @@ List<Geometry> _convertGeometry(gd.Geometry geometry, double? tolerance) =>
         points.map((p) => PointGeometry(p.x, p.y)).toList(),
       gd.MultiLineString(:final lineStrings) => lineStrings
           .map((ls) =>
-              LineStringGeometry(_simplifyLine(ls.points, tolerance)))
+              LineStringGeometry(_simplifyLineFromPoints(ls.points, tolerance)))
           .toList(),
       gd.MultiPolygon(:final polygons) => polygons
           .expand((poly) => _convertPolygon(poly.rings, tolerance))
@@ -419,7 +426,7 @@ List<Geometry> _convertPolygon(
   final simplified = <List<(double, double)>>[];
 
   for (var i = 0; i < rings.length; i++) {
-    final ring = _simplifyRing(rings[i].points, tolerance);
+    final ring = _simplifyRingFromPoints(rings[i].points, tolerance);
     if (ring.length >= 4) {
       simplified.add(ring);
     } else if (i == 0) {
@@ -433,41 +440,31 @@ List<Geometry> _convertPolygon(
   return [PolygonGeometry(simplified)];
 }
 
-/// Vereinfacht eine offene Linie (radiale Vorfilterung +
-/// Douglas-Peucker). Start- und Endpunkt bleiben erhalten.
-List<(double, double)> _simplifyLine(
+// simplifyLine und simplifyRing kommen aus mapstyler_style:
+//   import 'package:mapstyler_style/mapstyler_style.dart';
+//
+// simplifyLine(coords, tolerance) — offene Linie
+// simplifyRing(coords, tolerance) — geschlossener Ring
+
+/// Extrahiert Koordinaten und vereinfacht per mapstyler_style.
+List<(double, double)> _simplifyLineFromPoints(
   List<gd.Point> points,
   double? tolerance,
 ) {
-  var coords = points.map((p) => (p.x, p.y)).toList();
-  if (tolerance == null || tolerance <= 0 || coords.length <= 2) {
-    return coords;
-  }
-  coords = _radialFilter(coords, tolerance);
-  coords = _douglasPeucker(coords, tolerance);
-  return coords;
+  final coords = points.map((p) => (p.x, p.y)).toList();
+  return tolerance != null && tolerance > 0
+      ? simplifyLine(coords, tolerance)
+      : coords;
 }
 
-/// Vereinfacht einen geschlossenen Ring. Erster und letzter Punkt
-/// werden fixiert; Mindestpunktzahl ist 4 (3 eindeutige + Schluss).
-List<(double, double)> _simplifyRing(
+List<(double, double)> _simplifyRingFromPoints(
   List<gd.Point> points,
   double? tolerance,
 ) {
-  var coords = points.map((p) => (p.x, p.y)).toList();
-  if (tolerance == null || tolerance <= 0 || coords.length <= 4) {
-    return coords;
-  }
-  // Ringschluss temporaer entfernen, vereinfachen, dann
-  // wiederherstellen.
-  final closed = coords.first == coords.last;
-  if (closed) coords = coords.sublist(0, coords.length - 1);
-
-  coords = _radialFilter(coords, tolerance);
-  coords = _douglasPeucker(coords, tolerance);
-
-  if (closed) coords.add(coords.first);
-  return coords;
+  final coords = points.map((p) => (p.x, p.y)).toList();
+  return tolerance != null && tolerance > 0
+      ? simplifyRing(coords, tolerance)
+      : coords;
 }
 ```
 
@@ -482,18 +479,18 @@ mapstyler_gdal_adapter/
       load_vector_file_sync.dart       <-- synchrone Variante
       isolate_worker.dart              <-- Isolate-Einstiegspunkt
       geometry_converter.dart          <-- gdal_dart → mapstyler_style
-      geometry_simplifier.dart         <-- radiale Vorfilterung + Douglas-Peucker
-      ring_simplifier.dart             <-- ringspezifische Vereinfachung
       vector_layer_info.dart           <-- Metadaten-Modell
   test/
     geometry_converter_test.dart
-    geometry_simplifier_test.dart
-    ring_simplifier_test.dart
     load_vector_file_test.dart
   example/
     mapstyler_gdal_adapter_example.dart
   pubspec.yaml
 ```
+
+Die Vereinfachungs-Algorithmen (`simplifyLine`, `simplifyRing`,
+`radialFilter`, `douglasPeucker`) liegen in `mapstyler_style` und
+werden hier nur aufgerufen.
 
 ## Abhaengigkeiten
 
@@ -545,10 +542,8 @@ Formate oder serverseitige Filterung benoetigen.
 - [ ] `loadVectorFileSync()` fuer CLI/Server
 - [ ] Geometrie-Mapping fuer Point, LineString, Polygon und
       Multi-Varianten
-- [ ] Zweistufige Vereinfachung fuer Linien (radiale
-      Vorfilterung + Douglas-Peucker)
-- [ ] Ringspezifische Vereinfachung fuer Polygone (Ringschluss,
-      Mindestpunktzahl, Loch-Verwerfen bei Degeneration)
+- [ ] Vereinfachung aus `mapstyler_style` (`simplifyLine`,
+      `simplifyRing`) waehrend der Feature-Iteration anwenden
 - [ ] `loadVectorFileMultiScale()` / `loadVectorFileMultiScaleSync()`
       fuer vorberechnete LOD-Stufen
 - [ ] `inspectVectorFile()` / `inspectVectorFileSync()` fuer
@@ -605,37 +600,17 @@ Ziel fuer die erste Version:
   OGR-Geometrietypen
 - keine implizite Magie fuer exotische Sammelgeometrien
 
-**Zweistufige Vereinfachung fuer Linien**
+**Geometrie-Vereinfachung (aus `mapstyler_style`)**
 
-Loesung:
-- `geometry_simplifier.dart` mit zwei klar getrennten Schritten:
-  `_radialFilter` und `_douglasPeucker`
-- Eingabe und Ausgabe als `List<(double, double)>`, damit die
-  eigentliche Vereinfachung GDAL-unabhaengig testbar bleibt
-- bei `tolerance == null`, `tolerance <= 0` oder sehr kurzen Linien
-  frueh ohne Arbeit zurueckkehren
-- Start- und Endpunkt immer erhalten
+Die Vereinfachungs-Algorithmen liegen in `mapstyler_style`, nicht
+im Adapter. Der Adapter ruft `simplifyLine` und `simplifyRing`
+auf und uebergibt die aus `gdal_dart`-Punkten extrahierten
+Koordinaten.
 
-Ziel fuer die erste Version:
-- robuste Performance-Verbesserung bei grossen Liniengeometrien
-- testbare, formatunabhaengige Vereinfachungslogik
-
-**Ringspezifische Vereinfachung fuer Polygone**
-
-Loesung:
-- separaten `ring_simplifier.dart` fuer geschlossene Ringe vorsehen
-- Ringschluss vor der Vereinfachung temporaer loesen und danach
-  wiederherstellen
-- Exterior-Ring niemals stillschweigend verwerfen; faellt er unter die
-  Mindestpunktzahl, wird das Polygon unvereinbart uebernommen
-- Interior-Ringe duerfen bei Degeneration verworfen werden
-- keine aktive Topologie-Reparatur im MVP; stattdessen konservative
-  Regeln und klar dokumentiertes Verhalten
-
-Ziel fuer die erste Version:
-- brauchbare Polygon-Vereinfachung ohne falsche Sicherheit
-- valide Ringe in den haeufigen Faellen, ohne komplexe GIS-Topologie-
-  Engine nachzubauen
+Details zu Algorithmus, Ringschluss, Mindestpunktzahl und
+Topologie-Verhalten: siehe `mapstyler_style`-Roadmap und den
+Abschnitt [Geometrie-Vereinfachung](#geometrie-vereinfachung-douglas-peucker)
+weiter oben.
 
 **`loadVectorFileMultiScale()` fuer vorberechnete LOD-Stufen**
 
