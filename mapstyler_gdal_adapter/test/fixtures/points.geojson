@@ -1,0 +1,17 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "properties": {"name": "Berlin", "population": 3645000},
+      "geometry": {"type": "Point", "coordinates": [13.4, 52.5]}
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "properties": {"name": "Hamburg", "population": 1841000},
+      "geometry": {"type": "Point", "coordinates": [10.0, 53.55]}
+    }
+  ]
+}

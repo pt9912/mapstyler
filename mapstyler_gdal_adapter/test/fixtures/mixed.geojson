@@ -1,0 +1,68 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "properties": {"type": "city"},
+      "geometry": {"type": "Point", "coordinates": [13.4, 52.5]}
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "properties": {"type": "road"},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[13.0, 52.0], [13.5, 52.5], [14.0, 53.0]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "properties": {"type": "park"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[13.0, 52.0], [14.0, 52.0], [14.0, 53.0], [13.0, 53.0], [13.0, 52.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 4,
+      "properties": {"type": "multi"},
+      "geometry": {
+        "type": "MultiPoint",
+        "coordinates": [[10.0, 50.0], [11.0, 51.0]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "properties": {"type": "routes"},
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [[0.0, 0.0], [1.0, 1.0]],
+          [[2.0, 2.0], [3.0, 3.0]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6,
+      "properties": {"type": "areas"},
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 0.0]]],
+          [[[2.0, 2.0], [3.0, 2.0], [3.0, 3.0], [2.0, 2.0]]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 7,
+      "properties": {"type": "nogeom"},
+      "geometry": null
+    }
+  ]
+}
