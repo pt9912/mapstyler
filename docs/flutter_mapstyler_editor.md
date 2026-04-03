@@ -6,6 +6,11 @@ Package-Entwurf fuer einen visuellen Style-Editor auf Basis von
 Aktueller Prototyp:
 `demo/mapstyler_demo/lib/style_editor.dart`
 
+Dieses Dokument beschreibt den **Zielzustand** des kuenftigen Packages.
+Der Demo-Prototyp zeigt den grundsaetzlichen Datenfluss, kann aber in
+Details noch vom hier beschriebenen API- und Implementierungsziel
+abweichen.
+
 ## Rolle im Workspace
 
 ```text
@@ -20,16 +25,20 @@ Der Editor arbeitet auf demselben `Style`-Modell wie der Renderer.
 Aenderungen erzeugen neue immutable `Style`-Instanzen, die direkt
 an `StyleRenderer.renderStyle()` uebergeben werden koennen.
 
-## Herausforderung: Immutables Style-Modell
+## Update-Modell
 
-Das gesamte `mapstyler_style`-Modell ist immutable:
-- `Style`, `Rule`, `Symbolizer`, `Filter`, `Expression` sind `final class`
-  mit `const`-Konstruktoren
-- Es gibt **keine `copyWith()`-Methoden**
-- Jede Aenderung erfordert das Neuerstellen der gesamten Kette:
-  `Style` -> `Rules`-Liste -> `Symbolizer`-Liste
+Der Editor behandelt `mapstyler_style` funktional:
 
-### Rekonstruktions-Muster
+- Aenderungen erzeugen neue `Style`-Instanzen statt bestehende Objekte
+  in-place zu veraendern
+- `Style.rules` und `Rule.symbolizers` sind per `List.unmodifiable`
+  immutable abgesichert
+- `copyWith()` auf `Style`, `Rule`, `ScaleDenominator` und konkreten
+  `Symbolizer`-Klassen reduziert Boilerplate deutlich
+- `Expression` und `Filter` werden bei Bedarf weiterhin gezielt neu
+  konstruiert
+
+### Update-Muster mit `copyWith()`
 
 ```dart
 // Farbe eines FillSymbolizers aendern:
@@ -37,35 +46,31 @@ void updateFillColor(Style style, int ruleIdx, int symIdx, String hex) {
   final rule = style.rules[ruleIdx];
   final fill = rule.symbolizers[symIdx] as FillSymbolizer;
 
-  final newSymbolizer = FillSymbolizer(
-    color: LiteralExpression(hex),      // <-- geaendert
-    opacity: fill.opacity,               // alle anderen Felder
-    fillOpacity: fill.fillOpacity,       // manuell uebertragen
-    outlineColor: fill.outlineColor,
-    outlineWidth: fill.outlineWidth,
+  final newSymbolizer = fill.copyWith(
+    color: LiteralExpression(hex),
   );
 
   final newSymbolizers = [...rule.symbolizers];
   newSymbolizers[symIdx] = newSymbolizer;
 
-  final newRule = Rule(
-    name: rule.name,
-    filter: rule.filter,
+  final newRule = rule.copyWith(
     symbolizers: newSymbolizers,
-    scaleDenominator: rule.scaleDenominator,
   );
 
   final newRules = [...style.rules];
   newRules[ruleIdx] = newRule;
 
-  final newStyle = Style(name: style.name, rules: newRules);
+  final newStyle = style.copyWith(rules: newRules);
   // -> onChanged(newStyle)
 }
 ```
 
-Dieses Muster ist verbose, aber korrekt und vollstaendig typsicher.
-Ein spaeters `copyWith()` auf den Modellklassen wuerde den Editor-Code
-deutlich vereinfachen.
+Dieses Muster bleibt typsicher, ist aber deutlich kompakter als die
+vollstaendige manuelle Rekonstruktion aller betroffenen Felder.
+
+Der aktuelle Demo-Prototyp nutzt dieses `copyWith()`-basierte
+Update-Muster bereits durchgaengig. Das eigenstaendige Package sollte
+denselben Ansatz beibehalten.
 
 ## Prototyp-Architektur (Demo-App)
 
@@ -113,22 +118,22 @@ StyleEditor(
 )
 ```
 
-### Datenfluss
+### Ziel-Datenfluss im Package
 
 ```text
 Nutzer aendert Slider/Farbe
        |
        v
 _FillEditor / _LineEditor / _MarkEditor
-  -> erzeugt neuen Symbolizer (immutable)
+  -> erzeugt neuen Symbolizer via copyWith()
        |
        v
 _RuleCard._updateSymbolizer()
-  -> erzeugt neue Rule mit aktualisierter Symbolizer-Liste
+  -> erzeugt neue Rule via copyWith(symbolizers: ...)
        |
        v
 StyleEditor._updateRule()
-  -> erzeugt neuen Style mit aktualisierter Rule-Liste
+  -> erzeugt neuen Style via copyWith(rules: ...)
        |
        v
 onChanged(newStyle)
@@ -151,13 +156,21 @@ Der Editor muss damit umgehen:
 | `FunctionExpression<T>` | Read-only anzeigen (nicht editierbar) |
 | `null` | Default-Wert anzeigen, bei Aenderung Literal erzeugen |
 
-Helfer-Funktionen:
+Aktueller Stand:
+
+- der Demo-Prototyp nutzt lokale private Helfer fuer die Extraktion von
+  Literal-Werten
+- fuer das eigenstaendige Package sollte diese Logik mittelfristig in
+  `mapstyler_style` selbst liegen, z.B. ueber einen geplanten Getter wie
+  `Expression<T>.literalValue`
+
+Aktuelle Helfer im Prototyp:
 
 ```dart
-String? literalString(Expression<String>? e) =>
+String? _literalString(Expression<String>? e) =>
     e is LiteralExpression<String> ? e.value : null;
 
-double? literalDouble(Expression<double>? e) =>
+double? _literalDouble(Expression<double>? e) =>
     e is LiteralExpression<double> ? e.value : null;
 ```
 
@@ -179,15 +192,15 @@ externes Package):
 
 ```text
 +-----+-----+-----+-----+-----+
-|E76F5|F4A26|E9C46|F6BD6|F8961|
+|E76F51|F4A261|E9C46A|F6BD60|F8961E|
 +-----+-----+-----+-----+-----+
-|D6282|9B222|6D597|C77DF|5C7CF|
+|D62828|9B2226|6D597A|C77DFF|5C7CFA|
 +-----+-----+-----+-----+-----+
-|0B728|0A939|94D2B|6BAA7|2F523|
+|0B7285|0A9396|94D2BD|6BAA75|2F5233|
 +-----+-----+-----+-----+-----+
-|26465|1D355|35507|005F7|102A4|
+|264653|1D3557|355070|005F73|102A43|
 +-----+-----+-----+-----+-----+
-|8ECAE|FB850|FFFFF|B0B0B|31464|
+|8ECAE6|FB8500|FFFFFF|B0B0B0|31464B|
 +-----+-----+-----+-----+-----+
 ```
 
@@ -215,11 +228,11 @@ flutter_mapstyler_editor/
         color_row.dart                  <-- Farbfeld + Label
         slider_row.dart                 <-- Slider + Label
         color_picker_dialog.dart        <-- Palette oder HSL
-      expression_helpers.dart           <-- literal-Extraktion
+        color_utils.dart                <-- Hex/HSL-Konvertierung
   test/
     style_editor_test.dart
     rule_editor_test.dart
-    expression_helpers_test.dart
+    color_utils_test.dart
   pubspec.yaml
 ```
 
@@ -254,15 +267,98 @@ zeigt Controls, und liefert einen neuen `Style` zurueck.
 
 ## Offene Punkte / Erweiterungen
 
-- [ ] `copyWith()` auf `Style`, `Rule`, `Symbolizer` in `mapstyler_style`
-  wuerde den Editor-Code massiv vereinfachen
-- [ ] `TextSymbolizer`-Editor (Label-Expression, Schriftgroesse, Halo)
-- [ ] `IconSymbolizer`-Editor (Bild-URL, Groesse, Rotation)
-- [ ] Filter-Editor (Regelbedingungen visuell bearbeiten)
+### MVP
+
+- [ ] `TextSymbolizer`-Editor (mindestens Label-Expression,
+  Schriftgroesse, Halo)
+- [ ] `IconSymbolizer`-Editor (mindestens Bild-URL, Groesse, Rotation)
 - [ ] Regel hinzufuegen / entfernen / umsortieren (Drag & Drop)
 - [ ] Symbolizer hinzufuegen / entfernen
 - [ ] Hex-Eingabefeld und HSL-Farbregler
+
+#### Loesungsansatz fuer den MVP
+
+**`TextSymbolizer`-Editor**
+
+Loesung:
+- eigener `_TextEditor` analog zu `_FillEditor`, `_LineEditor` und
+  `_MarkEditor`
+- `label` als Sonderfall behandeln: `LiteralExpression<String>` per
+  Textfeld editieren, `FunctionExpression<String>` zunaechst read-only
+  anzeigen
+- `size`, `haloWidth` ueber Slider oder numerische Eingabe
+- `color`, `haloColor` ueber dieselben Farb-Controls wie bei Fill/Line
+
+Ziel fuer die erste Version:
+- einfache Literal-Labels direkt editierbar
+- datengetriebene Label-Expressions sichtbar, aber noch nicht visuell
+  modellierbar
+
+**`IconSymbolizer`-Editor**
+
+Loesung:
+- eigener `_IconEditor`
+- `image` ueber Textfeld bearbeiten
+- `size` und `rotate` ueber Slider oder numerische Eingabe
+- `opacity` kann in der ersten Version optional direkt mitgezogen
+  werden, auch wenn sie nicht zum Minimalumfang gehoert
+
+Ziel fuer die erste Version:
+- Literale Bild-URLs oder Asset-Pfade direkt editierbar
+- `FunctionExpression<String>` bei `image` zunaechst read-only
+
+**Regel hinzufuegen / entfernen / umsortieren**
+
+Loesung:
+- oberhalb der Regelliste einen "Regel hinzufuegen"-Button anbieten
+- jede `_RuleCard` bekommt Aktionen fuer Loeschen und Duplizieren
+- Umsortieren ueber `ReorderableListView` oder eine gleichwertige
+  reorderbare Listenstruktur
+- Aenderungen weiter rein ueber neue `rules`-Listen und
+  `style.copyWith(rules: ...)` abbilden
+
+Ziel fuer die erste Version:
+- neue leere Regel mit Default-Name und leerer Symbolizer-Liste
+- Entfernen und Reordering ohne komplexe Validierungslogik
+
+**Symbolizer hinzufuegen / entfernen**
+
+Loesung:
+- innerhalb jeder Regel einen "Symbolizer hinzufuegen"-Button
+- Typauswahl ueber kleines Dialog- oder Bottom-Sheet:
+  `Fill`, `Line`, `Mark`, `Text`, `Icon`
+- pro Typ eine kleine Default-Konfiguration erzeugen, damit der neue
+  Symbolizer sofort sichtbar und editierbar ist
+- Entfernen direkt an jedem Symbolizer-Block anbieten
+
+Ziel fuer die erste Version:
+- Erzeugen von brauchbaren Default-Symbolizern statt komplett leerer
+  Objekte
+- kein komplexer Multi-Select oder verschachteltes Reordering noetig
+
+**Hex-Eingabefeld und HSL-Farbregler**
+
+Loesung:
+- `_ColorRow` um freies Hex-Eingabefeld erweitern
+- `_ColorPickerDialog` neben der festen Palette um HSL-Slider
+  erweitern
+- Farbeingaben zentral normalisieren, z.B. immer als `#RRGGBB`
+  zurueckgeben
+- ungueltige Eingaben lokal validieren und nicht sofort in den Style
+  uebernehmen
+
+Ziel fuer die erste Version:
+- Palette bleibt als schneller Einstieg erhalten
+- Hex und HSL decken den produktiven Bearbeitungsfall ab, ohne ein
+  zusaetzliches Package zu erzwingen
+
+### V2
+
+- [ ] Filter-Editor (Regelbedingungen visuell bearbeiten)
 - [ ] Undo/Redo (Style-History-Stack)
+
+### Spaeter / ausserhalb des Kern-Editors
+
 - [ ] GeoStyler-JSON-Export des editierten Styles
 - [ ] Adapter-Roundtrip: editierten Style als Mapbox/QML/SLD exportieren
 
@@ -271,3 +367,4 @@ zeigt Controls, und liefert einen neuen `Style` zurueck.
 - [flutter_mapstyler.md](flutter_mapstyler.md) -- Renderer-API
 - [architecture.md](architecture.md) -- Workspace-Architektur
 - [mapstyler.md](mapstyler.md) -- Core-Style-Modell
+- [roadmap.md](roadmap.md) -- Geplante Kernmodell-Erweiterungen
