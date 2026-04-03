@@ -186,6 +186,33 @@ jobs:
       - run: docker build --target qml-adapter-coverage-check --no-cache-filter qml-adapter-coverage --progress=plain .
 
   # ---------------------------------------------------------------------------
+  # mapstyler_gdal_adapter
+  # ---------------------------------------------------------------------------
+  gdal-analyze:
+    name: GDAL Adapter – Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target gdal-analyze .
+
+  gdal-test:
+    name: GDAL Adapter – Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target gdal-test .
+
+  gdal-coverage:
+    name: GDAL Adapter – Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker build --target gdal-coverage-check --no-cache-filter gdal-coverage --progress=plain .
+
+  # ---------------------------------------------------------------------------
   # flutter_mapstyler
   # ---------------------------------------------------------------------------
   # flutter-analyze:
