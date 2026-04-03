@@ -31,5 +31,6 @@ export 'src/function.dart';
 export 'src/geometry.dart';
 export 'src/parser.dart';
 export 'src/rule.dart';
+export 'src/simplify.dart';
 export 'src/style.dart';
 export 'src/symbolizer.dart';
