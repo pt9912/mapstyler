@@ -86,20 +86,20 @@ void main() {
     });
 
     test('round-trip', () {
-      const rule = Rule(
+      final rule = Rule(
         name: 'Test',
-        filter: ComparisonFilter(
+        filter: const ComparisonFilter(
           operator: ComparisonOperator.eq,
           property: LiteralExpression('type'),
           value: LiteralExpression<Object>('road'),
         ),
-        symbolizers: [
+        symbolizers: const [
           LineSymbolizer(
             color: LiteralExpression('#333'),
             width: LiteralExpression(2.0),
           ),
         ],
-        scaleDenominator: ScaleDenominator(min: 0, max: 100000),
+        scaleDenominator: const ScaleDenominator(min: 0, max: 100000),
       );
       final json = rule.toJson();
       final restored = Rule.fromJson(json);
@@ -107,9 +107,9 @@ void main() {
     });
 
     test('equality', () {
-      const a = Rule(name: 'R1', symbolizers: []);
-      const b = Rule(name: 'R1', symbolizers: []);
-      const c = Rule(name: 'R2', symbolizers: []);
+      final a = Rule(name: 'R1', symbolizers: const []);
+      final b = Rule(name: 'R1', symbolizers: const []);
+      final c = Rule(name: 'R2', symbolizers: const []);
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
       expect(a.hashCode, b.hashCode);
@@ -158,7 +158,7 @@ void main() {
     });
 
     test('toJsonString', () {
-      const style = Style(name: 'test', rules: []);
+      final style = Style(name: 'test');
       final jsonString = style.toJsonString();
       final decoded = jsonDecode(jsonString) as Map<String, dynamic>;
       expect(decoded['name'], 'test');
@@ -166,12 +166,12 @@ void main() {
     });
 
     test('round-trip', () {
-      const style = Style(
+      final style = Style(
         name: 'Complete',
         rules: [
           Rule(
             name: 'Roads',
-            filter: CombinationFilter(
+            filter: const CombinationFilter(
               operator: CombinationOperator.and,
               filters: [
                 ComparisonFilter(
@@ -186,17 +186,17 @@ void main() {
                 ),
               ],
             ),
-            symbolizers: [
+            symbolizers: const [
               LineSymbolizer(
                 color: LiteralExpression('#333333'),
                 width: LiteralExpression(2.0),
               ),
             ],
-            scaleDenominator: ScaleDenominator(min: 0, max: 100000),
+            scaleDenominator: const ScaleDenominator(min: 0, max: 100000),
           ),
           Rule(
             name: 'Labels',
-            symbolizers: [
+            symbolizers: const [
               TextSymbolizer(
                 label: FunctionExpression(PropertyGet('name')),
                 size: LiteralExpression(12.0),
@@ -211,12 +211,12 @@ void main() {
     });
 
     test('round-trip via JSON string', () {
-      const style = Style(
+      final style = Style(
         name: 'StringTest',
         rules: [
           Rule(
             name: 'Fill',
-            symbolizers: [
+            symbolizers: const [
               FillSymbolizer(color: LiteralExpression('#ff0000')),
             ],
           ),
@@ -228,12 +228,178 @@ void main() {
     });
 
     test('equality', () {
-      const a = Style(name: 'S', rules: []);
-      const b = Style(name: 'S', rules: []);
-      const c = Style(name: 'X', rules: []);
+      final a = Style(name: 'S');
+      final b = Style(name: 'S');
+      final c = Style(name: 'X');
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
       expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  group('ScaleDenominator.copyWith', () {
+    test('replaces single field', () {
+      const sd = ScaleDenominator(min: 0, max: 50000);
+      final copy = sd.copyWith(min: 1000.0);
+      expect(copy.min, 1000.0);
+      expect(copy.max, 50000);
+    });
+
+    test('clears nullable field with explicit null', () {
+      const sd = ScaleDenominator(min: 0, max: 50000);
+      final copy = sd.copyWith(max: null);
+      expect(copy.min, 0);
+      expect(copy.max, isNull);
+    });
+
+    test('omitted fields keep current value', () {
+      const sd = ScaleDenominator(min: 100, max: 9999);
+      final copy = sd.copyWith();
+      expect(copy, sd);
+    });
+  });
+
+  group('Rule.copyWith', () {
+    test('replaces name', () {
+      final rule = Rule(name: 'A');
+      final copy = rule.copyWith(name: 'B');
+      expect(copy.name, 'B');
+    });
+
+    test('replaces symbolizers', () {
+      final rule = Rule(
+        symbolizers: const [
+          FillSymbolizer(color: LiteralExpression('#f00')),
+        ],
+      );
+      final copy = rule.copyWith(symbolizers: const [
+        LineSymbolizer(color: LiteralExpression('#333')),
+      ]);
+      expect(copy.symbolizers, hasLength(1));
+      expect(copy.symbolizers.first, isA<LineSymbolizer>());
+    });
+
+    test('clears filter with explicit null', () {
+      final rule = Rule(
+        filter: const ComparisonFilter(
+          operator: ComparisonOperator.eq,
+          property: LiteralExpression('x'),
+          value: LiteralExpression<Object>(1),
+        ),
+      );
+      final copy = rule.copyWith(filter: null);
+      expect(copy.filter, isNull);
+    });
+
+    test('clears scaleDenominator with explicit null', () {
+      final rule = Rule(
+        scaleDenominator: const ScaleDenominator(min: 0, max: 100),
+      );
+      final copy = rule.copyWith(scaleDenominator: null);
+      expect(copy.scaleDenominator, isNull);
+    });
+
+    test('omitted fields keep current value', () {
+      final rule = Rule(
+        name: 'R',
+        filter: const ComparisonFilter(
+          operator: ComparisonOperator.eq,
+          property: LiteralExpression('a'),
+          value: LiteralExpression<Object>('b'),
+        ),
+        symbolizers: const [FillSymbolizer()],
+        scaleDenominator: const ScaleDenominator(min: 0),
+      );
+      final copy = rule.copyWith();
+      expect(copy, rule);
+    });
+
+    test('copyWith round-trips through JSON', () {
+      final rule = Rule(
+        name: 'Original',
+        symbolizers: const [
+          FillSymbolizer(color: LiteralExpression('#ff0000')),
+        ],
+      );
+      final modified = rule.copyWith(name: 'Modified');
+      final json = modified.toJson();
+      final restored = Rule.fromJson(json);
+      expect(restored, modified);
+    });
+  });
+
+  group('Style.copyWith', () {
+    test('replaces name', () {
+      final style = Style(name: 'A');
+      final copy = style.copyWith(name: 'B');
+      expect(copy.name, 'B');
+      expect(copy.rules, isEmpty);
+    });
+
+    test('clears name with explicit null', () {
+      final style = Style(name: 'A');
+      final copy = style.copyWith(name: null);
+      expect(copy.name, isNull);
+    });
+
+    test('replaces rules', () {
+      final style = Style(name: 'S', rules: [Rule(name: 'R1')]);
+      final copy = style.copyWith(rules: [Rule(name: 'R2')]);
+      expect(copy.name, 'S');
+      expect(copy.rules, hasLength(1));
+      expect(copy.rules.first.name, 'R2');
+    });
+
+    test('omitted fields keep current value', () {
+      final style = Style(
+        name: 'Keep',
+        rules: [Rule(name: 'R')],
+      );
+      final copy = style.copyWith();
+      expect(copy, style);
+    });
+
+    test('copyWith round-trips through JSON', () {
+      final style = Style(
+        name: 'Original',
+        rules: [
+          Rule(symbolizers: const [
+            FillSymbolizer(color: LiteralExpression('#ff0000')),
+          ]),
+        ],
+      );
+      final modified = style.copyWith(name: 'Modified');
+      final json = modified.toJson();
+      final restored = Style.fromJson(json);
+      expect(restored, modified);
+    });
+  });
+
+  group('List immutability', () {
+    test('Style.rules is unmodifiable', () {
+      final style = Style(rules: [Rule(name: 'A')]);
+      expect(() => style.rules.add(Rule(name: 'B')),
+          throwsA(isA<UnsupportedError>()));
+    });
+
+    test('Rule.symbolizers is unmodifiable', () {
+      final rule = Rule(symbolizers: const [FillSymbolizer()]);
+      expect(() => rule.symbolizers.add(const LineSymbolizer()),
+          throwsA(isA<UnsupportedError>()));
+    });
+
+    test('Style.rules defensive copy protects against external mutation', () {
+      final list = <Rule>[Rule(name: 'A')];
+      final style = Style(rules: list);
+      list.add(Rule(name: 'B'));
+      expect(style.rules, hasLength(1));
+    });
+
+    test('Rule.symbolizers defensive copy protects against external mutation', () {
+      final list = <Symbolizer>[const FillSymbolizer()];
+      final rule = Rule(symbolizers: list);
+      list.add(const LineSymbolizer());
+      expect(rule.symbolizers, hasLength(1));
     });
   });
 

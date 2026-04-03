@@ -4,10 +4,10 @@ import 'package:test/test.dart';
 void main() {
   group('ReadStyleResult', () {
     test('ReadStyleSuccess holds output and warnings', () {
-      const style = Style(name: 'test');
-      const result = ReadStyleSuccess(
+      final style = Style(name: 'test');
+      final result = ReadStyleSuccess(
         output: style,
-        warnings: ['unsupported property'],
+        warnings: const ['unsupported property'],
       );
       expect(result.output, style);
       expect(result.warnings, ['unsupported property']);
@@ -15,7 +15,7 @@ void main() {
     });
 
     test('ReadStyleSuccess default warnings is empty', () {
-      const result = ReadStyleSuccess(output: Style(name: 'x'));
+      final result = ReadStyleSuccess(output: Style(name: 'x'));
       expect(result.warnings, isEmpty);
     });
 

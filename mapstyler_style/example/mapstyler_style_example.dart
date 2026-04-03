@@ -87,7 +87,7 @@ void _fromJson() {
 void _fromCode() {
   print('\n--- From code ---');
 
-  const style = Style(
+  final style = Style(
     name: 'Points of interest',
     rules: [
       Rule(
@@ -134,7 +134,7 @@ void _withFunctions() {
   print('\n--- Function expressions ---');
 
   // Color based on feature property using case()
-  const caseStyle = Style(
+  final caseStyle = Style(
     name: 'Dynamic color',
     rules: [
       Rule(
@@ -175,7 +175,7 @@ void _withFunctions() {
   _printStyle(caseStyle);
 
   // Width interpolated by zoom level
-  const interpStyle = Style(
+  final interpStyle = Style(
     name: 'Interpolated width',
     rules: [
       Rule(
@@ -215,7 +215,7 @@ void _withFunctions() {
 void _withSpatialFilter() {
   print('\n--- Spatial filter ---');
 
-  const style = Style(
+  final style = Style(
     name: 'Spatial query',
     rules: [
       Rule(

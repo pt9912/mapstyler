@@ -389,21 +389,21 @@ void main() {
     });
 
     test('ColorMap equality', () {
-      const a = ColorMap(
+      final a = ColorMap(
         type: 'ramp',
-        colorMapEntries: [
+        colorMapEntries: const [
           ColorMapEntry(color: '#ff0000', quantity: 0),
           ColorMapEntry(color: '#0000ff', quantity: 100),
         ],
       );
-      const b = ColorMap(
+      final b = ColorMap(
         type: 'ramp',
-        colorMapEntries: [
+        colorMapEntries: const [
           ColorMapEntry(color: '#ff0000', quantity: 0),
           ColorMapEntry(color: '#0000ff', quantity: 100),
         ],
       );
-      const c = ColorMap(type: 'intervals', colorMapEntries: []);
+      final c = ColorMap(type: 'intervals');
       expect(a, equals(b));
       expect(a, isNot(equals(c)));
     });
@@ -749,6 +749,263 @@ void main() {
         () => Symbolizer.fromJson({'kind': 'Unknown'}),
         throwsFormatException,
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // copyWith tests
+  // ---------------------------------------------------------------------------
+
+  group('FillSymbolizer.copyWith', () {
+    test('replaces single field', () {
+      const sym = FillSymbolizer(
+        color: LiteralExpression('#ff0000'),
+        opacity: LiteralExpression(0.5),
+      );
+      final copy = sym.copyWith(color: const LiteralExpression('#00ff00'));
+      expect((copy.color as LiteralExpression<String>).value, '#00ff00');
+      expect((copy.opacity as LiteralExpression<double>).value, 0.5);
+    });
+
+    test('clears field with explicit null', () {
+      const sym = FillSymbolizer(
+        color: LiteralExpression('#ff0000'),
+        outlineColor: LiteralExpression('#000'),
+      );
+      final copy = sym.copyWith(outlineColor: null);
+      expect(copy.color, isNotNull);
+      expect(copy.outlineColor, isNull);
+    });
+
+    test('omitted fields keep current value', () {
+      const sym = FillSymbolizer(
+        color: LiteralExpression('#f00'),
+        opacity: LiteralExpression(0.8),
+        fillOpacity: LiteralExpression(0.6),
+        outlineColor: LiteralExpression('#000'),
+        outlineWidth: LiteralExpression(1.0),
+      );
+      final copy = sym.copyWith();
+      expect(copy, sym);
+    });
+
+    test('round-trip through JSON after copyWith', () {
+      const sym = FillSymbolizer(
+        color: LiteralExpression('#ff0000'),
+        opacity: LiteralExpression(0.5),
+      );
+      final modified = sym.copyWith(opacity: const LiteralExpression(0.9));
+      final json = modified.toJson();
+      final restored = Symbolizer.fromJson(json) as FillSymbolizer;
+      expect(restored, modified);
+    });
+  });
+
+  group('LineSymbolizer.copyWith', () {
+    test('replaces fields', () {
+      const sym = LineSymbolizer(
+        color: LiteralExpression('#333'),
+        width: LiteralExpression(2.0),
+        cap: 'round',
+      );
+      final copy = sym.copyWith(
+        width: const LiteralExpression(4.0),
+        dasharray: [10.0, 5.0],
+      );
+      expect((copy.width as LiteralExpression<double>).value, 4.0);
+      expect(copy.dasharray, [10.0, 5.0]);
+      expect(copy.cap, 'round');
+    });
+
+    test('clears optional field', () {
+      const sym = LineSymbolizer(
+        color: LiteralExpression('#333'),
+        cap: 'round',
+      );
+      final copy = sym.copyWith(cap: null);
+      expect(copy.color, isNotNull);
+      expect(copy.cap, isNull);
+    });
+  });
+
+  group('LineSymbolizer equality with dasharray', () {
+    test('equal when dasharray matches', () {
+      const a = LineSymbolizer(
+        color: LiteralExpression('#333'),
+        dasharray: [10, 5],
+      );
+      const b = LineSymbolizer(
+        color: LiteralExpression('#333'),
+        dasharray: [10, 5],
+      );
+      expect(a, equals(b));
+      expect(a.hashCode, b.hashCode);
+    });
+
+    test('not equal when dasharray differs', () {
+      const a = LineSymbolizer(
+        color: LiteralExpression('#333'),
+        dasharray: [10, 5],
+      );
+      const b = LineSymbolizer(
+        color: LiteralExpression('#333'),
+        dasharray: [5, 3],
+      );
+      expect(a, isNot(equals(b)));
+    });
+
+    test('not equal when one dasharray is null', () {
+      const a = LineSymbolizer(
+        color: LiteralExpression('#333'),
+        dasharray: [10, 5],
+      );
+      const b = LineSymbolizer(
+        color: LiteralExpression('#333'),
+      );
+      expect(a, isNot(equals(b)));
+    });
+  });
+
+  group('MarkSymbolizer.copyWith', () {
+    test('replaces wellKnownName', () {
+      const sym = MarkSymbolizer(
+        wellKnownName: 'circle',
+        radius: LiteralExpression(8.0),
+      );
+      final copy = sym.copyWith(wellKnownName: 'square');
+      expect(copy.wellKnownName, 'square');
+      expect((copy.radius as LiteralExpression<double>).value, 8.0);
+    });
+
+    test('clears optional field', () {
+      const sym = MarkSymbolizer(
+        wellKnownName: 'circle',
+        strokeColor: LiteralExpression('#000'),
+      );
+      final copy = sym.copyWith(strokeColor: null);
+      expect(copy.strokeColor, isNull);
+      expect(copy.wellKnownName, 'circle');
+    });
+  });
+
+  group('IconSymbolizer.copyWith', () {
+    test('replaces image', () {
+      const sym = IconSymbolizer(
+        image: LiteralExpression('old.png'),
+        size: LiteralExpression(24.0),
+      );
+      final copy = sym.copyWith(
+        image: const LiteralExpression('new.png'),
+      );
+      expect((copy.image as LiteralExpression<String>).value, 'new.png');
+      expect((copy.size as LiteralExpression<double>).value, 24.0);
+    });
+
+    test('clears format with null', () {
+      const sym = IconSymbolizer(
+        image: LiteralExpression('icon.png'),
+        format: 'image/png',
+      );
+      final copy = sym.copyWith(format: null);
+      expect(copy.format, isNull);
+    });
+  });
+
+  group('TextSymbolizer.copyWith', () {
+    test('replaces multiple fields', () {
+      const sym = TextSymbolizer(
+        label: LiteralExpression('Hello'),
+        size: LiteralExpression(12.0),
+        font: 'Arial',
+      );
+      final copy = sym.copyWith(
+        size: const LiteralExpression(16.0),
+        font: 'Helvetica',
+        haloColor: const LiteralExpression('#fff'),
+      );
+      expect((copy.label as LiteralExpression<String>).value, 'Hello');
+      expect((copy.size as LiteralExpression<double>).value, 16.0);
+      expect(copy.font, 'Helvetica');
+      expect(copy.haloColor, isNotNull);
+    });
+
+    test('clears placement with null', () {
+      const sym = TextSymbolizer(
+        label: LiteralExpression('X'),
+        placement: 'line',
+      );
+      final copy = sym.copyWith(placement: null);
+      expect(copy.placement, isNull);
+    });
+  });
+
+  group('RasterSymbolizer.copyWith', () {
+    test('replaces opacity', () {
+      const sym = RasterSymbolizer(
+        opacity: LiteralExpression(0.5),
+        saturation: LiteralExpression(1.0),
+      );
+      final copy = sym.copyWith(opacity: const LiteralExpression(0.8));
+      expect((copy.opacity as LiteralExpression<double>).value, 0.8);
+      expect((copy.saturation as LiteralExpression<double>).value, 1.0);
+    });
+
+    test('clears colorMap with null', () {
+      final sym = RasterSymbolizer(
+        colorMap: ColorMap(type: 'ramp'),
+      );
+      final copy = sym.copyWith(colorMap: null);
+      expect(copy.colorMap, isNull);
+    });
+
+    test('omitted fields keep current value', () {
+      const sym = RasterSymbolizer(
+        opacity: LiteralExpression(0.5),
+        hueRotate: LiteralExpression(45.0),
+        brightnessMin: LiteralExpression(0.1),
+        brightnessMax: LiteralExpression(0.9),
+        saturation: LiteralExpression(1.2),
+        contrast: LiteralExpression(1.1),
+      );
+      final copy = sym.copyWith();
+      expect(copy, sym);
+    });
+
+    test('round-trip through JSON after copyWith', () {
+      const sym = RasterSymbolizer(
+        opacity: LiteralExpression(0.7),
+        hueRotate: LiteralExpression(90.0),
+      );
+      final modified = sym.copyWith(
+        saturation: const LiteralExpression(1.5),
+      );
+      final json = modified.toJson();
+      final restored = Symbolizer.fromJson(json) as RasterSymbolizer;
+      expect(restored, modified);
+    });
+  });
+
+  group('ColorMap immutability', () {
+    test('colorMapEntries is unmodifiable', () {
+      final cm = ColorMap(
+        type: 'ramp',
+        colorMapEntries: const [
+          ColorMapEntry(color: '#ff0000', quantity: 0),
+        ],
+      );
+      expect(
+        () => cm.colorMapEntries.add(
+          const ColorMapEntry(color: '#00ff00', quantity: 100),
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
+    test('defensive copy protects against external mutation', () {
+      final list = [const ColorMapEntry(color: '#ff0000', quantity: 0)];
+      final cm = ColorMap(type: 'ramp', colorMapEntries: list);
+      list.add(const ColorMapEntry(color: '#00ff00', quantity: 100));
+      expect(cm.colorMapEntries, hasLength(1));
     });
   });
 }
