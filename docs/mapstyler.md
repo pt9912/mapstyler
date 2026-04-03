@@ -228,12 +228,115 @@ List<(double, double)> simplifyRing(
 );
 ```
 
-**Hilfsfunktionen (packageintern):**
+**Pseudocode der Algorithmen:**
 
-- `radialFilter(coords, tolerance)` — entfernt Punkte naeher als
-  `tolerance` am vorherigen behaltenen Punkt. O(n), ein Durchgang.
-- `douglasPeucker(coords, tolerance)` — rekursive formerhalende
-  Vereinfachung. O(n log n) durchschnittlich.
+```dart
+/// Radiale Vorfilterung — entfernt Punkte, die naeher als
+/// [tolerance] am vorherigen behaltenen Punkt liegen.
+/// O(n), ein Durchgang.
+List<(double, double)> _radialFilter(
+  List<(double, double)> coords,
+  double tolerance,
+) {
+  if (coords.length <= 2) return coords;
+  final tolSq = tolerance * tolerance;
+  final result = [coords.first];
+
+  for (var i = 1; i < coords.length - 1; i++) {
+    final (px, py) = result.last;
+    final (cx, cy) = coords[i];
+    final dx = cx - px;
+    final dy = cy - py;
+    if (dx * dx + dy * dy >= tolSq) {
+      result.add(coords[i]);
+    }
+  }
+
+  result.add(coords.last); // Endpunkt immer erhalten
+  return result;
+}
+
+/// Douglas-Peucker — rekursive formerhaltende Vereinfachung.
+/// O(n log n) durchschnittlich.
+List<(double, double)> _douglasPeucker(
+  List<(double, double)> coords,
+  double tolerance,
+) {
+  if (coords.length <= 2) return coords;
+
+  // Punkt mit groesstem Abstand zur Linie start→end finden.
+  final (sx, sy) = coords.first;
+  final (ex, ey) = coords.last;
+  final dx = ex - sx;
+  final dy = ey - sy;
+  final lenSq = dx * dx + dy * dy;
+
+  var maxDist = 0.0;
+  var maxIdx = 0;
+
+  for (var i = 1; i < coords.length - 1; i++) {
+    final (px, py) = coords[i];
+    double dist;
+    if (lenSq == 0) {
+      // Start == End → Abstand zum Punkt
+      final dpx = px - sx;
+      final dpy = py - sy;
+      dist = dpx * dpx + dpy * dpy;
+    } else {
+      // Lotfusspunkt auf die Linie
+      final t = ((px - sx) * dx + (py - sy) * dy) / lenSq;
+      final tc = t.clamp(0.0, 1.0);
+      final projX = sx + tc * dx;
+      final projY = sy + tc * dy;
+      final dpx = px - projX;
+      final dpy = py - projY;
+      dist = dpx * dpx + dpy * dpy;
+    }
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIdx = i;
+    }
+  }
+
+  if (maxDist < tolerance * tolerance) {
+    // Alle Zwischenpunkte liegen innerhalb der Toleranz.
+    return [coords.first, coords.last];
+  }
+
+  // Rekursiv beide Haelften vereinfachen.
+  final left = _douglasPeucker(coords.sublist(0, maxIdx + 1), tolerance);
+  final right = _douglasPeucker(coords.sublist(maxIdx), tolerance);
+  return [...left, ...right.skip(1)];
+}
+
+/// Zweistufige Linienvereinfachung.
+List<(double, double)> simplifyLine(
+  List<(double, double)> coords,
+  double tolerance,
+) {
+  if (tolerance <= 0 || coords.length <= 2) return coords;
+  return _douglasPeucker(_radialFilter(coords, tolerance), tolerance);
+}
+
+/// Ringspezifische Vereinfachung: loest den Ringschluss temporaer,
+/// vereinfacht, stellt ihn wieder her. Mindestpunktzahl: 4.
+List<(double, double)> simplifyRing(
+  List<(double, double)> coords,
+  double tolerance,
+) {
+  if (tolerance <= 0 || coords.length <= 4) return coords;
+
+  final closed = coords.first == coords.last;
+  var open = closed ? coords.sublist(0, coords.length - 1) : coords;
+
+  open = _radialFilter(open, tolerance);
+  open = _douglasPeucker(open, tolerance);
+
+  if (open.length < 3) return coords; // zu wenige Punkte → Original
+  if (closed) open.add(open.first);
+  return open;
+}
+```
 
 Die Toleranz ist in derselben Einheit wie die Koordinaten (Grad
 bei EPSG:4326, Meter bei projizierten CRS). Die Berechnung einer
