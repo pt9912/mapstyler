@@ -228,25 +228,6 @@ Fuer Anwendungen mit interaktivem Zoom oder wechselndem Massstab
 kann der Adapter mehrere LOD-Stufen (Level of Detail) in einem
 Durchlauf erzeugen:
 
-```dart
-/// Laedt Features mit vorberechneten Vereinfachungsstufen.
-///
-/// [tolerances] definiert die LOD-Stufen als absteigende
-/// Toleranzen in Karteneinheiten (z.B. `[0.02, 0.001, 0.00005]`).
-/// Pro Toleranz wird eine eigene `StyledFeatureCollection` erzeugt.
-/// Zusaetzlich wird immer eine Stufe mit `tolerance = 0`
-/// (Original-Geometrien) angelegt.
-///
-/// Der Aufrufer waehlt zur Renderzeit die passende Stufe anhand
-/// seiner aktuellen Kartenaufloesung.
-Future<Map<double, StyledFeatureCollection>> loadVectorFileMultiScale(
-  String path, {
-  required List<double> tolerances,
-  int layerIndex = 0,
-  String? layerName,
-});
-```
-
 Alle Stufen werden in **einem Iterationsdurchlauf** berechnet:
 pro Feature werden alle Toleranzen gleichzeitig angewendet.
 Die GDAL-Daten werden nur einmal gelesen.
@@ -259,6 +240,16 @@ Die Lade-API ist **asynchron** und fuehrt die GDAL-Iteration
 sowie die Vereinfachung in einem eigenen Isolate aus, damit das
 UI nicht blockiert wird. Fuer CLI-/Server-Anwendungen wird eine
 synchrone Variante bereitgestellt.
+
+Wichtig fuer die Implementierung:
+
+- `dart:ffi`-Handles oder GDAL-Objekte werden **nicht** zwischen
+  Isolates uebertragen
+- der Worker-Isolate oeffnet Datei und Layer selbst und initialisiert
+  dabei die noetigen GDAL-Ressourcen lokal
+- an den aufrufenden Isolate werden nur reine Dart-Daten
+  (`StyledFeatureCollection`, `VectorLayerInfo`, primitive Werte)
+  zurueckgegeben
 
 ```dart
 import 'package:mapstyler_gdal_adapter/mapstyler_gdal_adapter.dart';
@@ -301,6 +292,40 @@ StyledFeatureCollection loadVectorFileSync(
   String? layerName,
   double? simplifyTolerance,
   double? simplifyToleranceMeters,
+  ({double minX, double minY, double maxX, double maxY})? spatialFilter,
+  String? attributeFilter,
+});
+
+/// Laedt mehrere vorberechnete Vereinfachungsstufen asynchron in einem
+/// eigenen Isolate.
+///
+/// Genau einer der beiden Parameter [tolerances] oder
+/// [tolerancesMeters] darf gesetzt sein.
+///
+/// - [tolerances]: Toleranzen in nativer CRS-Einheit
+/// - [tolerancesMeters]: Toleranzen in Metern; der Adapter rechnet
+///   intern in die native CRS-Einheit um
+///
+/// Die Rueckgabe mappt die **effektiv verwendete native Toleranz**
+/// auf die jeweilige `StyledFeatureCollection`. Zusaetzlich wird immer
+/// eine Stufe `0.0` fuer die Originalgeometrien erzeugt.
+Future<Map<double, StyledFeatureCollection>> loadVectorFileMultiScale(
+  String path, {
+  List<double>? tolerances,
+  List<double>? tolerancesMeters,
+  int layerIndex = 0,
+  String? layerName,
+  ({double minX, double minY, double maxX, double maxY})? spatialFilter,
+  String? attributeFilter,
+});
+
+/// Synchrone Variante fuer CLI-Tools und Server-Anwendungen.
+Map<double, StyledFeatureCollection> loadVectorFileMultiScaleSync(
+  String path, {
+  List<double>? tolerances,
+  List<double>? tolerancesMeters,
+  int layerIndex = 0,
+  String? layerName,
   ({double minX, double minY, double maxX, double maxY})? spatialFilter,
   String? attributeFilter,
 });
@@ -524,7 +549,8 @@ Formate oder serverseitige Filterung benoetigen.
       Vorfilterung + Douglas-Peucker)
 - [ ] Ringspezifische Vereinfachung fuer Polygone (Ringschluss,
       Mindestpunktzahl, Loch-Verwerfen bei Degeneration)
-- [ ] `loadVectorFileMultiScale()` fuer vorberechnete LOD-Stufen
+- [ ] `loadVectorFileMultiScale()` / `loadVectorFileMultiScaleSync()`
+      fuer vorberechnete LOD-Stufen
 - [ ] `inspectVectorFile()` / `inspectVectorFileSync()` fuer
       Layer-Metadaten
 - [ ] Tests: Linien-Vereinfachung, Ring-Vereinfachung
@@ -618,6 +644,10 @@ Loesung:
   mehrere Toleranzen vereinfachen
 - Ergebnis als `Map<double, StyledFeatureCollection>` mit zusaetzlicher
   `0.0`-Stufe fuer Originalgeometrien
+- Async-API und Sync-API ueber denselben Kernpfad aufbauen, analog zu
+  `loadVectorFile()` / `loadVectorFileSync()`
+- genau einer der beiden Parameter `tolerances` oder
+  `tolerancesMeters` darf gesetzt sein
 - Toleranzen vorab normalisieren: sortieren, deduplizieren, nur
   positive Werte zusaetzlich zur Originalstufe zulassen
 
