@@ -374,9 +374,7 @@ class VectorLayerInfo {
   final int featureCount;
   final List<({String name, String type})> fields;
   final ({double minX, double minY, double maxX, double maxY})? extent;
-  final String? geometryType; // z.B. 'Point', 'Polygon' — derzeit
-                              // meist null (gdal_dart exponiert den
-                              // Getter noch nicht)
+  final String? geometryType; // z.B. 'Point', 'Polygon' — ab gdal_dart 0.2.1
   final String? crs;          // z.B. 'EPSG:4326'
 }
 ```
