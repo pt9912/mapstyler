@@ -11,5 +11,6 @@ workspace:
   - mapstyler_sld_adapter
   - qml4dart
   - mapstyler_qml_adapter
+  - mapstyler_gdal_adapter
   - flutter_mapstyler
   - demo/mapstyler_demo

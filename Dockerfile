@@ -1,13 +1,14 @@
 ## ---------------------------------------------------------------------------
 ## Pure Dart packages
 ## (mapstyler_style, mapbox4dart, mapstyler_mapbox_adapter,
-##  mapstyler_sld_adapter, qml4dart, mapstyler_qml_adapter)
+##  mapstyler_sld_adapter, qml4dart, mapstyler_qml_adapter,
+##  mapstyler_gdal_adapter)
 ## ---------------------------------------------------------------------------
 FROM dart:stable AS base
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    lcov \
+    lcov libgdal-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -23,16 +24,18 @@ COPY mapstyler_mapbox_adapter/pubspec.yaml mapstyler_mapbox_adapter/pubspec.yaml
 COPY mapstyler_sld_adapter/pubspec.yaml mapstyler_sld_adapter/pubspec.yaml
 COPY qml4dart/pubspec.yaml qml4dart/pubspec.yaml
 COPY mapstyler_qml_adapter/pubspec.yaml mapstyler_qml_adapter/pubspec.yaml
+COPY mapstyler_gdal_adapter/pubspec.yaml mapstyler_gdal_adapter/pubspec.yaml
 
 # Placeholder libs so pub get can resolve
 RUN mkdir -p mapstyler_style/lib mapbox4dart/lib mapstyler_mapbox_adapter/lib mapstyler_sld_adapter/lib \
-    qml4dart/lib mapstyler_qml_adapter/lib \
+    qml4dart/lib mapstyler_qml_adapter/lib mapstyler_gdal_adapter/lib \
     && touch mapstyler_style/lib/mapstyler_style.dart \
     && touch mapbox4dart/lib/mapbox4dart.dart \
     && touch mapstyler_mapbox_adapter/lib/mapstyler_mapbox_adapter.dart \
     && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart \
     && touch qml4dart/lib/qml4dart.dart \
-    && touch mapstyler_qml_adapter/lib/mapstyler_qml_adapter.dart
+    && touch mapstyler_qml_adapter/lib/mapstyler_qml_adapter.dart \
+    && touch mapstyler_gdal_adapter/lib/mapstyler_gdal_adapter.dart
 
 RUN dart pub get
 
@@ -43,6 +46,7 @@ COPY mapstyler_mapbox_adapter/ mapstyler_mapbox_adapter/
 COPY mapstyler_sld_adapter/ mapstyler_sld_adapter/
 COPY qml4dart/ qml4dart/
 COPY mapstyler_qml_adapter/ mapstyler_qml_adapter/
+COPY mapstyler_gdal_adapter/ mapstyler_gdal_adapter/
 
 ## ---------------------------------------------------------------------------
 ## mapstyler_style
@@ -425,6 +429,68 @@ RUN awk -F'[,:]' -v min="$COVERAGE_MIN" '\
 # Publish dry-run
 FROM base AS qml-adapter-publish-check
 WORKDIR /app/mapstyler_qml_adapter
+RUN dart pub publish --dry-run
+
+## ---------------------------------------------------------------------------
+## mapstyler_gdal_adapter
+## ---------------------------------------------------------------------------
+
+# Analyze
+FROM base AS gdal-analyze
+WORKDIR /app/mapstyler_gdal_adapter
+RUN dart analyze
+
+# Test
+FROM base AS gdal-test
+WORKDIR /app/mapstyler_gdal_adapter
+RUN dart test
+
+# Coverage
+FROM base AS gdal-coverage
+ARG COVERAGE_VERSION=1.15.0
+RUN dart pub global activate coverage ${COVERAGE_VERSION}
+ENV PATH="/root/.pub-cache/bin:${PATH}"
+WORKDIR /app/mapstyler_gdal_adapter
+RUN dart test --coverage=coverage
+RUN dart pub global run coverage:format_coverage \
+    --package=. \
+    --report-on=lib \
+    --lcov \
+    --in=coverage \
+    --out=coverage/lcov.info
+RUN lcov --summary coverage/lcov.info
+ENTRYPOINT ["cat", "coverage/lcov.info"]
+
+# Coverage threshold uncovered lines
+FROM gdal-coverage AS gdal-coverage-uncovered
+RUN awk -F'[,:]' '\
+    /^SF:/ { file=substr($0,4) } \
+    /^DA:/ { total[file]++; if ($3 > 0) hit[file]++; else uncov[file]=uncov[file] " " $2 } \
+    END { for (f in total) { \
+    h=hit[f]+0; t=total[f]; \
+    printf "%.1f%% (%d/%d) %s\n", (h/t)*100, h, t, f; \
+    if (h < t) printf "  uncovered lines:%s\n", uncov[f]; \
+    } }' coverage/lcov.info | sort -t'%' -k1 -n >uncovered.txt
+ENTRYPOINT ["cat", "uncovered.txt"]
+
+# Coverage threshold check
+FROM gdal-coverage AS gdal-coverage-check
+ARG COVERAGE_MIN=95
+RUN awk -F'[,:]' -v min="$COVERAGE_MIN" '\
+    /^DA:/ { total += 1; if ($3 > 0) hit += 1 } \
+    END { \
+    if (total == 0) { \
+    print "No coverage data found in coverage/lcov.info"; \
+    exit 1; \
+    } \
+    pct = (hit / total) * 100; \
+    printf "Line coverage: %.2f%% (threshold %.2f%%)\n", pct, min; \
+    if (pct < min) { exit 2 } \
+    }' coverage/lcov.info
+
+# Publish dry-run
+FROM base AS gdal-publish-check
+WORKDIR /app/mapstyler_gdal_adapter
 RUN dart pub publish --dry-run
 
 ## ---------------------------------------------------------------------------
