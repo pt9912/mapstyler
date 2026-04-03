@@ -6,7 +6,8 @@ Diese Datei beschreibt das gemeinsame Style-Modell des `mapstyler`-
 - das `mapstyler_style`-Package
 - das GeoStyler-kompatible JSON-Zwischenformat
 - die zentralen Typen `Style`, `Rule`, `Symbolizer`, `Filter`,
-  `Expression`, `Geometry`
+  `Expression`, `Geometry`, `StyledFeature`,
+  `StyledFeatureCollection`
 
 Architektur, format-spezifische Details und Rendering werden in
 separaten Dokumenten beschrieben.
@@ -30,6 +31,7 @@ Zielformate schreiben.
 - das zentrale Typsystem des Workspaces
 - die Implementierung des GeoStyler-kompatiblen JSON-Formats
 - die Heimat des gemeinsamen `StyleParser<T>`-Interfaces
+- die Heimat des gemeinsamen Flutter-freien Feature-Modells
 
 Das Package ist pure Dart und hängt nicht von Flutter ab.
 
@@ -195,6 +197,34 @@ kleines Geometriemodell:
 Das Modell ist absichtlich unabhängig von `gml4dart` oder GeoJSON-
 Bibliotheken. Adapter wie `mapstyler_sld_adapter` übernehmen die
 Übersetzung an ihren jeweiligen Grenzen.
+
+### StyledFeature und StyledFeatureCollection
+
+Neben Style-Typen enthält `mapstyler_style` auch das gemeinsame
+Feature-Modell für Renderer und Daten-Adapter:
+
+```dart
+class StyledFeature {
+  final String? id;
+  final Map<String, dynamic> properties;
+  final Geometry geometry;
+}
+
+class StyledFeatureCollection {
+  final List<StyledFeature> features;
+}
+```
+
+Diese Typen liegen bewusst im Kernmodell statt in `flutter_mapstyler`:
+
+- Daten-Adapter wie `mapstyler_gdal_adapter` können Features ohne
+  Flutter-Abhängigkeit erzeugen
+- `flutter_mapstyler` kann dieselben Typen direkt rendern
+- CLI- und Server-Anwendungen können Features ebenfalls ohne Flutter
+  verarbeiten
+
+`flutter_mapstyler` ergänzt die Collection nur noch um renderernahe
+Hilfen wie den räumlichen Index per Extension.
 
 ## GeoStyler-JSON als Zwischenformat
 

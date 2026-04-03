@@ -17,7 +17,8 @@ trennt bewusst zwischen:
 
 Dadurch bleiben Parser, Konverter und Renderer unabhängig voneinander.
 Ein neues Format kann ergänzt werden, ohne den Kern oder bestehende
-Adapter grundlegend umzubauen.
+Adapter grundlegend umzubauen. Dasselbe gilt für Daten-Adapter, die
+Features statt Styles in das Kernmodell übersetzen.
 
 ## Schichtenmodell
 
@@ -45,13 +46,15 @@ Adapter auf das gemeinsame Kernmodell
   mapstyler_sld_adapter
   mapstyler_mapbox_adapter
   mapstyler_qml_adapter
+  mapstyler_gdal_adapter (geplant)
         │
         ▼
 Kernmodell
   mapstyler_style
         │
         ├── GeoStyler-JSON lesen/schreiben
-        └── Regeln, Filter, Symbolizer, Expressions, Geometrien
+        └── Regeln, Filter, Symbolizer, Expressions, Geometrien,
+            StyledFeature, StyledFeatureCollection
         │
         ▼
 Rendering
@@ -80,6 +83,10 @@ Kern diffundieren. Sie gehören in:
 
 So bleibt `mapstyler_style` stabil und wiederverwendbar.
 
+Dasselbe gilt für Geodaten-Adapter: Dateiformat- und GDAL-spezifische
+Logik bleibt im Adapter, während `StyledFeature` und
+`StyledFeatureCollection` im Kernmodell leben.
+
 ### 3. Pure Dart als Standard
 
 Alle Pakete außer `flutter_mapstyler` sind als pure Dart ausgelegt. Das
@@ -106,6 +113,7 @@ Style ursprünglich aus SLD, Mapbox oder QML stammt.
 | `mapstyler_mapbox_adapter` | Adapter | Öffentliche Konvertierungs-API zwischen Mapbox-JSON und `mapstyler_style`; kann intern `mapbox4dart` verwenden |
 | `mapstyler_qml_adapter` | Adapter | Öffentliche Konvertierungs-API zwischen QML/XML und `mapstyler_style`; kann intern `qml4dart` verwenden |
 | `mapstyler_sld_adapter` | Adapter | Öffentliche Konvertierungs-API zwischen SLD/XML und `mapstyler_style`; kann intern `flutter_map_sld` nutzen |
+| `mapstyler_gdal_adapter` | Daten-Adapter (geplant) | Öffentliche Lade-API für OGR-/GDAL-unterstützte Vektorformate; erzeugt `StyledFeatureCollection` aus Geodaten ohne Flutter-Abhängigkeit |
 | `flutter_mapstyler` | Rendering | Auswertung von Regeln, Filtern und Expressions für `flutter_map` |
 
 ## Abhängigkeitsregeln
@@ -117,6 +125,9 @@ Die Richtung der Abhängigkeiten ist absichtlich eingeschränkt:
   mapstyler-Kern.
 - Adapter dürfen vom jeweiligen Formatmodell und von
   `mapstyler_style` abhängen.
+- Daten-Adapter wie `mapstyler_gdal_adapter` dürfen von externen
+  Datenbibliotheken und von `mapstyler_style` abhängen, aber nicht von
+  Flutter.
 - `flutter_mapstyler` hängt von `mapstyler_style` und Flutter ab, aber
   nicht von Formatpaketen.
 
@@ -204,6 +215,10 @@ Der Repository-Root definiert einen Dart-Workspace mit diesen Modulen:
 Der Workspace bündelt Entwicklung, Tests und Releases, ohne die
 fachliche Trennung zwischen Kern, Formaten, Adaptern und Rendering
 aufzugeben.
+
+Geplante Packages wie `mapstyler_gdal_adapter` oder
+`flutter_mapstyler_editor` sind in separaten Entwurfsdokumenten
+beschrieben, aber noch nicht Teil des aktuellen Workspace.
 
 ## Nicht-Ziele
 

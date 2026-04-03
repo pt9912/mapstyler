@@ -13,6 +13,8 @@ formatunabhaengige Kartenstile werden:
 - `mapstyler_style` als stabiles Kernmodell
 - Adapter fuer SLD, QML und Mapbox
 - `flutter_mapstyler` fuer das Rendering in Flutter
+- datenorientierte Adapter wie `mapstyler_gdal_adapter` fuer
+  Flutter-freie Feature-Loads aus Vektorformaten
 - spaeter optional Editor- und Tooling-Packages auf Basis desselben
   Kernmodells
 
@@ -22,8 +24,9 @@ Die naechsten Entwicklungsschritte konzentrieren sich auf:
 
 1. Stabilisierung und Ergonomie des Kernmodells
 2. Ausbau und Absicherung der Format-Adapter
-3. Performance und Reife des Flutter-Renderings
-4. Vorbereitung eines eigenstaendigen Editor-Packages
+3. Aufbau eines Daten-Adapters fuer externe Vektorformate
+4. Performance und Reife des Flutter-Renderings
+5. Vorbereitung eines eigenstaendigen Editor-Packages
 
 ## Package-Roadmap
 
@@ -111,6 +114,24 @@ Geplante Punkte:
 - verlustarme Roundtrips verbessern
 - formattypische Sonderfaelle explizit testen
 - Unterschiede zwischen Kernmodell und Zielformat sauber dokumentieren
+
+### `mapstyler_gdal_adapter`
+
+Ziel: Vektordaten aus GDAL-/OGR-unterstuetzten Formaten in
+`StyledFeatureCollection` laden, vereinfachen und Flutter-frei
+bereitstellen.
+
+Geplante Punkte:
+
+- asynchrone und synchrone Lade-APIs fuer Datei- und Layer-basierte
+  Zugriffe bereitstellen
+- Geometrie-Mapping fuer Point, LineString, Polygon und Multi-Varianten
+  robust abdecken
+- zweistufige Linien-Vereinfachung und konservative Ring-
+  Vereinfachung fuer Polygone implementieren
+- Layer-Metadaten-Inspektion fuer Dateiauswahl und Tooling anbieten
+- Lese- und Konvertierungstests fuer Shapefile, GeoJSON und GeoPackage
+  aufbauen
 
 ### `flutter_mapstyler_editor`
 
