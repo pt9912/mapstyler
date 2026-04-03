@@ -27,13 +27,15 @@ mit:
 
 - `Style`, `Rule`, `Symbolizer`, `Filter`, `Expression` aus
   `mapstyler_style`
-- dem eigenen Feature-Modell `StyledFeature` /
-  `StyledFeatureCollection`
+- `StyledFeature` / `StyledFeatureCollection` aus `mapstyler_style`
+- einem in `flutter_mapstyler` ergaenzten R-Tree-Zugriff fuer
+  Viewport-Abfragen
 
 ## Eingabemodell
 
 Der Renderer erwartet bewusst kein externes GeoJSON-Package. Stattdessen
-nutzt er ein kleines, stabiles Feature-Modell:
+nutzt er das kleine, stabile Feature-Modell aus `mapstyler_style`,
+das `flutter_mapstyler` direkt re-exportiert:
 
 ```dart
 final class StyledFeature {
@@ -46,6 +48,10 @@ final class StyledFeatureCollection {
   final List<StyledFeature> features;
 }
 ```
+
+`flutter_mapstyler` selbst ergaenzt darauf einen lazy aufgebauten
+R-Tree-Index per Extension, ohne die Feature-Typen wieder in die
+Rendering-Schicht zurueckzuziehen.
 
 Konsequenzen:
 
