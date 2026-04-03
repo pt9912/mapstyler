@@ -9,7 +9,7 @@ environment:
   sdk: '>=3.7.0 <4.0.0'
 
 dependencies:
-  gdal_dart: ^0.2.0
+  gdal_dart: ^0.2.1
   mapstyler_style: ^0.1.0
 
 dev_dependencies:

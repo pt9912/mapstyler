@@ -212,8 +212,7 @@ List<VectorLayerInfo> inspectVectorFileSync(String path) {
             .map((f) => (name: f.name, type: f.type.name))
             .toList(),
         extent: layer.extent,
-        // geometryType: available from gdal_dart >=0.2.1
-        // geometryType: layer.geometryType?.name,
+        geometryType: layer.geometryType?.name,
         crs: crs,
       );
     });
