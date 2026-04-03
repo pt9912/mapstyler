@@ -73,6 +73,15 @@ Geplante Punkte:
   eingefuehrt — sealed Types mit wenigen Feldern profitieren davon
   nicht; Rekonstruktion ist der natuerliche Weg.
 
+Umgesetzt (Feature-Typen):
+
+- `StyledFeature` und `StyledFeatureCollection` (ohne R-Tree) aus
+  `flutter_mapstyler` nach `mapstyler_style` verschoben.
+  Daten-Adapter wie `mapstyler_gdal_adapter` koennen Features ohne
+  Flutter-Abhaengigkeit erzeugen. Der R-Tree-Index bleibt als
+  Extension in `flutter_mapstyler`; bestehende Imports bleiben
+  dank Re-Export kompatibel.
+
 ### `flutter_mapstyler`
 
 Ziel: Zuverlaessiges und performantes Rendering fuer `mapstyler_style`

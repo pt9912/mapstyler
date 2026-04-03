@@ -100,7 +100,7 @@ Style ursprünglich aus SLD, Mapbox oder QML stammt.
 
 | Package | Rolle | Verantwortung |
 |---|---|---|
-| `mapstyler_style` | Kern | Formatunabhängige Typen für `Style`, `Rule`, `Symbolizer`, `Filter`, `Expression`, `Geometry` sowie GeoStyler-JSON-Serialisierung |
+| `mapstyler_style` | Kern | Formatunabhängige Typen für `Style`, `Rule`, `Symbolizer`, `Filter`, `Expression`, `Geometry`, `StyledFeature`/`StyledFeatureCollection` sowie GeoStyler-JSON-Serialisierung |
 | `mapbox4dart` | Formatmodell | Pure-Dart-Codec und Objektmodell für Mapbox-GL-Style-JSON; wird typischerweise intern von Mapbox-Adaptern genutzt |
 | `qml4dart` | Formatmodell | Pure-Dart-Codec und Objektmodell für QGIS-QML; wird typischerweise intern von QML-Adaptern genutzt |
 | `mapstyler_mapbox_adapter` | Adapter | Öffentliche Konvertierungs-API zwischen Mapbox-JSON und `mapstyler_style`; kann intern `mapbox4dart` verwenden |
