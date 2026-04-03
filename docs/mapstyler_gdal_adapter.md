@@ -531,6 +531,131 @@ Formate oder serverseitige Filterung benoetigen.
       (Schluss, Mindestpunktzahl, Topologie), Geometrie-Mapping,
       Lese-/Konvertierungstests mit Shapefile, GeoJSON und GeoPackage
 
+#### Loesungsansatz fuer den MVP
+
+**`loadVectorFile()` (async, Isolate)**
+
+Loesung:
+- oeffentliche Async-API als duenne Huelle ueber `Isolate.run(...)`
+  oder einen dedizierten Worker in `src/isolate_worker.dart`
+- Isolate-Eingabe als serialisierbare Request-Struktur modellieren:
+  `path`, `layerIndex`, `layerName`, `simplifyTolerance`,
+  `simplifyToleranceMeters`, `spatialFilter`, `attributeFilter`
+- der Worker ruft intern dieselbe synchrone Kernlogik auf wie
+  `loadVectorFileSync()`, damit es nur einen Konvertierungspfad gibt
+- Fehler aus GDAL/FFI in packageeigene Exceptions oder
+  `ArgumentError`/`StateError` mit klarer Datei-/Layer-Info uebersetzen
+
+Ziel fuer die erste Version:
+- Flutter-Apps koennen Vektordaten laden, ohne den UI-Thread zu blockieren
+- die gesamte Fachlogik bleibt dennoch in einer synchronen Kernfunktion
+
+**`loadVectorFileSync()` fuer CLI/Server**
+
+Loesung:
+- synchrone Kernfunktion in `src/load_vector_file_sync.dart`
+- dieselben Parameter und dieselbe Validierung wie die Async-Variante
+- Async-API delegiert intern nur an diesen Pfad
+
+Ziel fuer die erste Version:
+- keine doppelte Fachlogik
+- gute Nutzbarkeit fuer Tests, Skripte und Server-Anwendungen
+
+**Geometrie-Mapping fuer Point, LineString, Polygon und Multi-Varianten**
+
+Loesung:
+- zentrale Konvertierung in `geometry_converter.dart`
+- `Point`, `LineString`, `Polygon` direkt auf die entsprechenden
+  `mapstyler_style`-Geometrien abbilden
+- `MultiPoint`, `MultiLineString`, `MultiPolygon` in mehrere
+  `StyledFeature`-Instanzen aufspalten
+- `GeometryCollection` in der ersten Version bewusst nicht unterstuetzen:
+  Warnung oder Fehler sammeln, aber nicht raten
+- Feature-IDs fuer Multi-Geometrien stabil erweitern, z.B. `fid`,
+  `fid-0`, `fid-1`
+
+Ziel fuer die erste Version:
+- sauberes und deterministisches Mapping fuer die haeufigen
+  OGR-Geometrietypen
+- keine implizite Magie fuer exotische Sammelgeometrien
+
+**Zweistufige Vereinfachung fuer Linien**
+
+Loesung:
+- `geometry_simplifier.dart` mit zwei klar getrennten Schritten:
+  `_radialFilter` und `_douglasPeucker`
+- Eingabe und Ausgabe als `List<(double, double)>`, damit die
+  eigentliche Vereinfachung GDAL-unabhaengig testbar bleibt
+- bei `tolerance == null`, `tolerance <= 0` oder sehr kurzen Linien
+  frueh ohne Arbeit zurueckkehren
+- Start- und Endpunkt immer erhalten
+
+Ziel fuer die erste Version:
+- robuste Performance-Verbesserung bei grossen Liniengeometrien
+- testbare, formatunabhaengige Vereinfachungslogik
+
+**Ringspezifische Vereinfachung fuer Polygone**
+
+Loesung:
+- separaten `ring_simplifier.dart` fuer geschlossene Ringe vorsehen
+- Ringschluss vor der Vereinfachung temporaer loesen und danach
+  wiederherstellen
+- Exterior-Ring niemals stillschweigend verwerfen; faellt er unter die
+  Mindestpunktzahl, wird das Polygon unvereinbart uebernommen
+- Interior-Ringe duerfen bei Degeneration verworfen werden
+- keine aktive Topologie-Reparatur im MVP; stattdessen konservative
+  Regeln und klar dokumentiertes Verhalten
+
+Ziel fuer die erste Version:
+- brauchbare Polygon-Vereinfachung ohne falsche Sicherheit
+- valide Ringe in den haeufigen Faellen, ohne komplexe GIS-Topologie-
+  Engine nachzubauen
+
+**`loadVectorFileMultiScale()` fuer vorberechnete LOD-Stufen**
+
+Loesung:
+- pro Feature die Rohkoordinaten einmal extrahieren und danach gegen
+  mehrere Toleranzen vereinfachen
+- Ergebnis als `Map<double, StyledFeatureCollection>` mit zusaetzlicher
+  `0.0`-Stufe fuer Originalgeometrien
+- Toleranzen vorab normalisieren: sortieren, deduplizieren, nur
+  positive Werte zusaetzlich zur Originalstufe zulassen
+
+Ziel fuer die erste Version:
+- ein Lese-Durchlauf fuer mehrere Darstellungsstufen
+- einfache Auswahl der passenden Stufe in der Host-App
+
+**`inspectVectorFile()` / `inspectVectorFileSync()` fuer Layer-Metadaten**
+
+Loesung:
+- Metadaten-API getrennt vom Feature-Laden halten
+- `name`, `featureCount`, `fields` und `extent` direkt aus dem OGR-Layer
+  lesen, ohne Features komplett zu konvertieren
+- Async-Variante analog zu `loadVectorFile()` im Isolate ausfuehren
+- Sync-Variante fuer CLI und Tests direkt bereitstellen
+
+Ziel fuer die erste Version:
+- Datei- und Layerauswahl ohne Vollimport
+- dieselbe Nutzbarkeit in Flutter und in reinen Dart-Umgebungen
+
+**Tests**
+
+Loesung:
+- Vereinfachungsalgorithmen isoliert und ohne GDAL-Mock testen, wo
+  moeglich
+- Ring-Tests explizit auf Ringschluss, Mindestpunktzahl und Verhalten
+  degenerierter Loecher ausrichten
+- Geometrie-Mapping pro OGR-Typ in kleinen, gerichteten Testfaellen
+  pruefen
+- dateibasierte Integrationstests mit kleinen Fixtures fuer
+  Shapefile, GeoJSON und GeoPackage
+- Async- und Sync-API gegen dieselben erwarteten Ergebnisse laufen
+  lassen
+
+Ziel fuer die erste Version:
+- hohe Sicherheit in der Kernlogik
+- echte Formatabdeckung statt nur algorithmischer Unit-Tests
+
 ### Spaeter
 
 - [ ] CRS-Transformation via `gdal_dart` `CoordinateTransform`
