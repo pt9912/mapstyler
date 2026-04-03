@@ -381,112 +381,27 @@ class VectorLayerInfo {
 
 ## Konvertierungslogik
 
-```dart
-// Pseudocode der internen Konvertierung:
+Die Implementierung liegt in:
 
-StyledFeatureCollection _convert(OgrLayer layer, {double? tolerance}) {
-  final features = <StyledFeature>[];
+- `lib/src/geometry_converter.dart` — Geometrie-Mapping und
+  Vereinfachung (ruft `simplifyLine`/`simplifyRing` aus
+  `mapstyler_style` auf)
+- `lib/src/load_vector_file_sync.dart` — Lade-Schleife mit
+  Filterung, Toleranz-Umrechnung und Warning-Sammlung
+- `lib/src/load_vector_file.dart` — Async-Wrapper via
+  `Isolate.run`
 
-  // Lazy Iteration — GDAL materialisiert ein Feature nach dem anderen.
-  for (final f in layer.features) {
-    final geometry = f.geometry;
-    if (geometry == null) continue;
+Kernablauf:
 
-    // Konvertierung + Vereinfachung in einem Schritt.
-    // Die volle Aufloesung existiert nur kurz als gdal_dart-Objekt
-    // und wird nie als mapstyler_style-Geometry materialisiert.
-    final converted = _convertGeometry(geometry, tolerance);
-
-    for (final (i, geo) in converted.indexed) {
-      features.add(StyledFeature(
-        id: converted.length == 1 ? '${f.fid}' : '${f.fid}-$i',
-        geometry: geo,
-        properties: f.attributes,
-      ));
-    }
-  }
-
-  return StyledFeatureCollection(features);
-}
-
-/// Konvertiert eine gdal_dart-Geometrie in mapstyler_style-Geometrien.
-///
-/// Linien werden per _simplifyLine vereinfacht, Polygon-Ringe per
-/// _simplifyRing (mit Ringschluss und Mindestpunktzahl).
-/// Points bleiben unveraendert, Multi-Geometrien werden aufgespalten.
-List<Geometry> _convertGeometry(gd.Geometry geometry, double? tolerance) =>
-    switch (geometry) {
-      gd.Point(:final x, :final y) => [PointGeometry(x, y)],
-      gd.LineString(:final points) => [
-        LineStringGeometry(_simplifyLineFromPoints(points, tolerance)),
-      ],
-      gd.Polygon(:final rings) =>
-        _convertPolygon(rings, tolerance),
-      gd.MultiPoint(:final points) =>
-        points.map((p) => PointGeometry(p.x, p.y)).toList(),
-      gd.MultiLineString(:final lineStrings) => lineStrings
-          .map((ls) =>
-              LineStringGeometry(_simplifyLineFromPoints(ls.points, tolerance)))
-          .toList(),
-      gd.MultiPolygon(:final polygons) => polygons
-          .expand((poly) => _convertPolygon(poly.rings, tolerance))
-          .toList(),
-      _ => [],
-    };
-
-/// Konvertiert Polygon-Ringe mit ringspezifischer Vereinfachung.
-///
-/// - Exterior-Ring (Index 0): wird immer beibehalten, mindestens
-///   4 Punkte, Ringschluss gesichert.
-/// - Interior-Ringe (Loecher): werden verworfen wenn sie unter
-///   4 Punkte fallen oder nach Vereinfachung degeneriert sind.
-List<Geometry> _convertPolygon(
-    List<gd.LineString> rings, double? tolerance) {
-  if (rings.isEmpty) return [];
-  final simplified = <List<(double, double)>>[];
-
-  for (var i = 0; i < rings.length; i++) {
-    final ring = _simplifyRingFromPoints(rings[i].points, tolerance);
-    if (ring.length >= 4) {
-      simplified.add(ring);
-    } else if (i == 0) {
-      // Exterior-Ring zu klein → Polygon unvereinbart uebernehmen
-      return [PolygonGeometry(
-        rings.map((r) => r.points.map((p) => (p.x, p.y)).toList()).toList(),
-      )];
-    }
-    // Interior-Ring zu klein → stillschweigend verwerfen
-  }
-  return [PolygonGeometry(simplified)];
-}
-
-// simplifyLine und simplifyRing kommen aus mapstyler_style:
-//   import 'package:mapstyler_style/mapstyler_style.dart';
-//
-// simplifyLine(coords, tolerance) — offene Linie
-// simplifyRing(coords, tolerance) — geschlossener Ring
-
-/// Extrahiert Koordinaten und vereinfacht per mapstyler_style.
-List<(double, double)> _simplifyLineFromPoints(
-  List<gd.Point> points,
-  double? tolerance,
-) {
-  final coords = points.map((p) => (p.x, p.y)).toList();
-  return tolerance != null && tolerance > 0
-      ? simplifyLine(coords, tolerance)
-      : coords;
-}
-
-List<(double, double)> _simplifyRingFromPoints(
-  List<gd.Point> points,
-  double? tolerance,
-) {
-  final coords = points.map((p) => (p.x, p.y)).toList();
-  return tolerance != null && tolerance > 0
-      ? simplifyRing(coords, tolerance)
-      : coords;
-}
-```
+1. GDAL-Datei oeffnen, Layer waehlen, Filter setzen
+2. Ueber `layer.features` iterieren (lazy, ein Feature nach
+   dem anderen)
+3. Pro Feature: `gdal_dart`-Koordinaten extrahieren,
+   optional vereinfachen, in `mapstyler_style`-Geometrien
+   umwandeln
+4. Multi-Geometrien in Einzel-Features aufspalten
+5. Null-Geometrien und unsupported Types als Warning sammeln
+6. `LoadVectorResult` mit Features und Warnings zurueckgeben
 
 ## Package-Entwurf
 
