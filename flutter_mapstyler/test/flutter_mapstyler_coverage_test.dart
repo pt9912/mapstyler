@@ -1483,8 +1483,8 @@ void main() {
 
     test('text renderer handles polygon and envelope anchors', () {
       final layer = renderer.renderRule(
-        rule: const Rule(
-          symbolizers: [
+        rule: Rule(
+          symbolizers: const [
             TextSymbolizer(
               label: LiteralExpression('Area'),
               haloColor: LiteralExpression('#ffffff'),
@@ -1675,8 +1675,8 @@ void main() {
 
     test('renderStyle invalidates persistent expression cache on property change', () {
       final style = Style(rules: [
-        const Rule(
-          symbolizers: [
+        Rule(
+          symbolizers: const [
             TextSymbolizer(
               label: FunctionExpression(PropertyGet('name')),
             ),
@@ -1716,8 +1716,8 @@ void main() {
 
     test('renderStyle filters features by viewport before rendering', () {
       final style = Style(rules: [
-        const Rule(
-          symbolizers: [
+        Rule(
+          symbolizers: const [
             MarkSymbolizer(
               wellKnownName: 'circle',
               radius: LiteralExpression(6.0),
@@ -1751,8 +1751,8 @@ void main() {
 
     test('renderStyle does not persist random expression results across renders', () {
       final style = Style(rules: [
-        const Rule(
-          symbolizers: [
+        Rule(
+          symbolizers: const [
             TextSymbolizer(
               label: FunctionExpression(
                 ArgsFunction(

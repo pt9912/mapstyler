@@ -30,7 +30,7 @@ void main() async {
 
   // -- Build from code and write ------------------------------------------
   print('\n--- From code → QML ---');
-  const style = Style(
+  final style = Style(
     rules: [
       Rule(
         name: 'Forests',

@@ -1082,7 +1082,7 @@ void main() {
     });
 
     test('writeStyle produces QML XML string', () async {
-      const style = ms.Style(
+      final style = ms.Style(
         rules: [
           ms.Rule(
             symbolizers: [

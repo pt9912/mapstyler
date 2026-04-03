@@ -86,18 +86,18 @@ void main() {
 
   group('convertStyle (internal)', () {
     test('converts Style to SLD document', () {
-      const style = ms.Style(
+      final style = ms.Style(
         name: 'Buildings',
         rules: [
           ms.Rule(
             name: 'Residential',
-            filter: ms.ComparisonFilter(
+            filter: const ms.ComparisonFilter(
               operator: ms.ComparisonOperator.eq,
               property: ms.LiteralExpression('type'),
               value: ms.LiteralExpression('residential'),
             ),
             symbolizers: [
-              ms.FillSymbolizer(
+              const ms.FillSymbolizer(
                 color: ms.LiteralExpression('#ffcc00'),
               ),
             ],

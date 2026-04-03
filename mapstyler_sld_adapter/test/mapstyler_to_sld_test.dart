@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 void main() {
   group('convertStyle', () {
     test('wraps rules in single SLD layer', () {
-      const style = ms.Style(
+      final style = ms.Style(
         name: 'TestStyle',
         rules: [
           ms.Rule(name: 'Rule1'),
@@ -28,9 +28,9 @@ void main() {
 
   group('MarkSymbolizer round-trip', () {
     test('radius×2 → size → radius', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.MarkSymbolizer(
+          const ms.MarkSymbolizer(
             wellKnownName: 'circle',
             radius: ms.LiteralExpression(10.0),
             color: ms.LiteralExpression('#ff0000'),
@@ -61,9 +61,9 @@ void main() {
 
   group('IconSymbolizer round-trip (TEST-7)', () {
     test('preserves format, size, rotation', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.IconSymbolizer(
+          const ms.IconSymbolizer(
             image: ms.LiteralExpression('marker.png'),
             format: 'image/png',
             size: ms.LiteralExpression(32.0),
@@ -88,9 +88,9 @@ void main() {
 
   group('LineSymbolizer round-trip', () {
     test('preserves stroke properties', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.LineSymbolizer(
+          const ms.LineSymbolizer(
             color: ms.LiteralExpression('#333333'),
             width: ms.LiteralExpression(2.5),
             opacity: ms.LiteralExpression(0.7),
@@ -119,9 +119,9 @@ void main() {
 
   group('FillSymbolizer round-trip', () {
     test('preserves fill and outline', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.FillSymbolizer(
+          const ms.FillSymbolizer(
             color: ms.LiteralExpression('#ffcc00'),
             fillOpacity: ms.LiteralExpression(0.5),
             outlineColor: ms.LiteralExpression('#aa8800'),
@@ -142,9 +142,9 @@ void main() {
     });
 
     test('preserves fill when only opacity set (WRITE-3)', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.FillSymbolizer(
+          const ms.FillSymbolizer(
             fillOpacity: ms.LiteralExpression(0.5),
           ),
         ]),
@@ -159,9 +159,9 @@ void main() {
     });
 
     test('preserves outline when only width set (WRITE-3)', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.FillSymbolizer(
+          const ms.FillSymbolizer(
             outlineWidth: ms.LiteralExpression(2.0),
           ),
         ]),
@@ -177,9 +177,9 @@ void main() {
 
   group('TextSymbolizer round-trip (TEST-8)', () {
     test('preserves label, font, color, halo, placement', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.TextSymbolizer(
+          const ms.TextSymbolizer(
             label: ms.FunctionExpression(ms.PropertyGet('name')),
             font: 'Arial',
             size: ms.LiteralExpression(14.0),
@@ -207,9 +207,9 @@ void main() {
     });
 
     test('preserves halo when only width set (WRITE-2)', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.TextSymbolizer(
+          const ms.TextSymbolizer(
             label: ms.LiteralExpression('Test'),
             haloWidth: ms.LiteralExpression(3.0),
           ),
@@ -226,18 +226,18 @@ void main() {
 
   group('RasterSymbolizer round-trip (TEST-6)', () {
     test('preserves colorMap and channels', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.RasterSymbolizer(
-            opacity: ms.LiteralExpression(0.8),
+            opacity: const ms.LiteralExpression(0.8),
             colorMap: ms.ColorMap(
               type: 'ramp',
-              colorMapEntries: [
+              colorMapEntries: const [
                 ms.ColorMapEntry(color: '#00ff00', quantity: 0, opacity: 1.0),
                 ms.ColorMapEntry(color: '#ff0000', quantity: 100, opacity: 1.0),
               ],
             ),
-            channelSelection: ms.ChannelSelection(
+            channelSelection: const ms.ChannelSelection(
               grayChannel: ms.Channel(sourceChannelName: '1'),
             ),
           ),
@@ -259,9 +259,9 @@ void main() {
   group('Filter round-trip', () {
     test('preserves comparison filter (BUG-4 fix: value is Literal not PropertyName)',
         () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          filter: ms.ComparisonFilter(
+          filter: const ms.ComparisonFilter(
             operator: ms.ComparisonOperator.eq,
             property: ms.LiteralExpression('type'),
             value: ms.LiteralExpression('road'),
@@ -280,9 +280,9 @@ void main() {
     });
 
     test('preserves gt filter', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          filter: ms.ComparisonFilter(
+          filter: const ms.ComparisonFilter(
             operator: ms.ComparisonOperator.gt,
             property: ms.LiteralExpression('population'),
             value: ms.LiteralExpression(10000),
@@ -297,9 +297,9 @@ void main() {
     });
 
     test('preserves combination filter', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          filter: ms.CombinationFilter(
+          filter: const ms.CombinationFilter(
             operator: ms.CombinationOperator.and,
             filters: [
               ms.ComparisonFilter(
@@ -325,9 +325,9 @@ void main() {
     });
 
     test('preserves Or filter (TEST-9)', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          filter: ms.CombinationFilter(
+          filter: const ms.CombinationFilter(
             operator: ms.CombinationOperator.or,
             filters: [
               ms.ComparisonFilter(
@@ -352,9 +352,9 @@ void main() {
     });
 
     test('preserves negation filter', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          filter: ms.NegationFilter(
+          filter: const ms.NegationFilter(
             filter: ms.ComparisonFilter(
               operator: ms.ComparisonOperator.eq,
               property: ms.LiteralExpression('hidden'),
@@ -373,9 +373,9 @@ void main() {
 
   group('Spatial filter round-trip', () {
     test('preserves spatial filter geometry', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          filter: ms.SpatialFilter(
+          filter: const ms.SpatialFilter(
             operator: ms.SpatialOperator.intersects,
             geometry: ms.PointGeometry(8.5, 47.5),
           ),
@@ -391,9 +391,9 @@ void main() {
     });
 
     test('preserves Beyond distance filter (TEST-10)', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          filter: ms.DistanceFilter(
+          filter: const ms.DistanceFilter(
             operator: ms.DistanceOperator.beyond,
             geometry: ms.PointGeometry(8.5, 47.5),
             distance: 5000,
@@ -414,9 +414,9 @@ void main() {
 
   group('Scale denominator round-trip', () {
     test('preserves min and max', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
-          scaleDenominator: ms.ScaleDenominator(min: 1000, max: 50000),
+          scaleDenominator: const ms.ScaleDenominator(min: 1000, max: 50000),
         ),
       ]);
 
@@ -430,9 +430,9 @@ void main() {
 
   group('warnings', () {
     test('reports CSS-filter properties as unsupported', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.RasterSymbolizer(
+          const ms.RasterSymbolizer(
             hueRotate: ms.LiteralExpression(90.0),
             saturation: ms.LiteralExpression(1.5),
           ),

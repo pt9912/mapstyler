@@ -6,14 +6,14 @@ import 'package:test/test.dart';
 void main() {
   group('convertStyle', () {
     test('empty style produces empty layers', () {
-      const style = ms.Style();
+      final style = ms.Style();
       final result = convertStyle(style) as ms.WriteStyleSuccess<mb.MapboxStyle>;
       expect(result.output.layers, isEmpty);
       expect(result.output.version, 8);
     });
 
     test('fill symbolizer with filter and scale', () {
-      const style = ms.Style(
+      final style = ms.Style(
         name: 'Test',
         rules: [
           ms.Rule(
@@ -47,7 +47,7 @@ void main() {
     });
 
     test('line symbolizer with dasharray', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.LineSymbolizer(
             color: ms.LiteralExpression('#333'),
@@ -68,7 +68,7 @@ void main() {
     });
 
     test('circle mark symbolizer', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.MarkSymbolizer(
             wellKnownName: 'circle',
@@ -88,7 +88,7 @@ void main() {
     });
 
     test('non-circle mark produces warning', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.MarkSymbolizer(wellKnownName: 'star'),
         ]),
@@ -99,7 +99,7 @@ void main() {
     });
 
     test('text symbolizer', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.TextSymbolizer(
             label: ms.FunctionExpression(ms.PropertyGet('name')),
@@ -126,7 +126,7 @@ void main() {
     });
 
     test('icon symbolizer', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.IconSymbolizer(
             image: ms.LiteralExpression('marker'),
@@ -146,7 +146,7 @@ void main() {
     });
 
     test('raster symbolizer', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.RasterSymbolizer(
             opacity: ms.LiteralExpression(0.7),
@@ -170,7 +170,7 @@ void main() {
     });
 
     test('combination filter serialized', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.CombinationFilter(
             operator: ms.CombinationOperator.and,
@@ -198,7 +198,7 @@ void main() {
     });
 
     test('negation filter', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.NegationFilter(
             filter: ms.ComparisonFilter(
@@ -217,7 +217,7 @@ void main() {
     });
 
     test('spatial filter produces warning', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.SpatialFilter(
             operator: ms.SpatialOperator.bbox,
@@ -233,7 +233,7 @@ void main() {
     });
 
     test('interpolate expression roundtrip', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.LineSymbolizer(
             width: ms.FunctionExpression(ms.InterpolateFunction(
@@ -261,7 +261,7 @@ void main() {
     });
 
     test('step expression roundtrip', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.FillSymbolizer(
             color: ms.FunctionExpression(ms.StepFunction(
@@ -284,7 +284,7 @@ void main() {
     });
 
     test('case expression roundtrip', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
           ms.FillSymbolizer(
             color: ms.FunctionExpression(ms.CaseFunction(
@@ -325,7 +325,7 @@ void main() {
     });
 
     test('multiple symbolizers produce multiple layers', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           name: 'multi',
           symbolizers: [

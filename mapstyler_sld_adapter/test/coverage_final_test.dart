@@ -253,9 +253,9 @@ void main() {
 
   // Write: ContrastEnhancement with 'none' (line 315 mapstyler_to_sld.dart)
   test('Write: ContrastEnhancement none round-trips', () {
-    const style = ms.Style(rules: [
+    final style = ms.Style(rules: [
       ms.Rule(symbolizers: [
-        ms.RasterSymbolizer(
+        const ms.RasterSymbolizer(
           contrastEnhancement: ms.ContrastEnhancement(
             enhancementType: 'none',
             gammaValue: 1.0,
@@ -277,11 +277,11 @@ void main() {
       name: 'unknownOp',
       args: [],
     ));
-    const style = ms.Style(rules: [
+    final style = ms.Style(rules: [
       ms.Rule(
         filter: ms.ComparisonFilter(
           operator: ms.ComparisonOperator.eq,
-          property: ms.LiteralExpression('field'),
+          property: const ms.LiteralExpression('field'),
           value: unknownFunc,
         ),
       ),
@@ -295,9 +295,9 @@ void main() {
 
   // Write: contrastEnhancement on per-channel (line 271-272)
   test('Write: per-channel contrastEnhancement round-trips', () {
-    const style = ms.Style(rules: [
+    final style = ms.Style(rules: [
       ms.Rule(symbolizers: [
-        ms.RasterSymbolizer(
+        const ms.RasterSymbolizer(
           channelSelection: ms.ChannelSelection(
             grayChannel: ms.Channel(
               sourceChannelName: '1',

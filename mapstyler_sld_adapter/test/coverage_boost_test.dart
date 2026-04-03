@@ -69,11 +69,11 @@ void main() {
   // -----------------------------------------------------------------------
   group('Write: distance filters', () {
     test('DWithin writes correctly', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.DistanceFilter(
             operator: ms.DistanceOperator.dWithin,
-            geometry: ms.PointGeometry(8, 47),
+            geometry: const ms.PointGeometry(8, 47),
             distance: 500,
             units: 'm',
           ),
@@ -89,11 +89,11 @@ void main() {
     });
 
     test('Beyond writes correctly', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.DistanceFilter(
             operator: ms.DistanceOperator.beyond,
-            geometry: ms.PointGeometry(8, 47),
+            geometry: const ms.PointGeometry(8, 47),
             distance: 1000,
             units: 'km',
           ),
@@ -111,11 +111,11 @@ void main() {
   // -----------------------------------------------------------------------
   group('Write: geometry round-trip', () {
     test('EnvelopeGeometry → GmlEnvelope', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.SpatialFilter(
             operator: ms.SpatialOperator.bbox,
-            geometry: ms.EnvelopeGeometry(
+            geometry: const ms.EnvelopeGeometry(
               minX: 8, minY: 47, maxX: 9, maxY: 48),
           ),
         ),
@@ -130,11 +130,11 @@ void main() {
     });
 
     test('LineStringGeometry round-trip', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.SpatialFilter(
             operator: ms.SpatialOperator.intersects,
-            geometry: ms.LineStringGeometry([(0.0, 0.0), (1.0, 1.0)]),
+            geometry: const ms.LineStringGeometry([(0.0, 0.0), (1.0, 1.0)]),
           ),
         ),
       ]);
@@ -148,11 +148,11 @@ void main() {
     });
 
     test('PolygonGeometry with holes round-trip', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.SpatialFilter(
             operator: ms.SpatialOperator.within,
-            geometry: ms.PolygonGeometry([
+            geometry: const ms.PolygonGeometry([
               [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 0.0)],
               [(2.0, 2.0), (3.0, 2.0), (3.0, 3.0), (2.0, 2.0)],
             ]),
@@ -287,11 +287,11 @@ void main() {
           ),
         ],
       ));
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.ComparisonFilter(
             operator: ms.ComparisonOperator.eq,
-            property: ms.LiteralExpression('cat'),
+            property: const ms.LiteralExpression('cat'),
             value: step,
           ),
         ),
@@ -320,11 +320,11 @@ void main() {
           ),
         ],
       ));
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.ComparisonFilter(
             operator: ms.ComparisonOperator.eq,
-            property: ms.LiteralExpression('color'),
+            property: const ms.LiteralExpression('color'),
             value: interp,
           ),
         ),
@@ -354,11 +354,11 @@ void main() {
         ],
         fallback: ms.LiteralExpression('#cccccc'),
       ));
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.ComparisonFilter(
             operator: ms.ComparisonOperator.eq,
-            property: ms.LiteralExpression('result'),
+            property: const ms.LiteralExpression('result'),
             value: caseFunc,
           ),
         ),
@@ -379,11 +379,11 @@ void main() {
           ms.FunctionExpression(ms.PropertyGet('name')),
         ],
       ));
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.ComparisonFilter(
             operator: ms.ComparisonOperator.eq,
-            property: ms.LiteralExpression('label'),
+            property: const ms.LiteralExpression('label'),
             value: concat,
           ),
         ),
@@ -402,11 +402,11 @@ void main() {
           ms.LiteralExpression('#.##'),
         ],
       ));
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(
           filter: ms.ComparisonFilter(
             operator: ms.ComparisonOperator.eq,
-            property: ms.LiteralExpression('display'),
+            property: const ms.LiteralExpression('display'),
             value: fmt,
           ),
         ),
@@ -423,9 +423,9 @@ void main() {
   // -----------------------------------------------------------------------
   group('Write: RasterSymbolizer contrastEnhancement', () {
     test('writes and reads back contrastEnhancement', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.RasterSymbolizer(
+          const ms.RasterSymbolizer(
             contrastEnhancement: ms.ContrastEnhancement(
               enhancementType: 'histogram',
               gammaValue: 0.8,
@@ -443,9 +443,9 @@ void main() {
     });
 
     test('writes channelSelection with contrastEnhancement', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.RasterSymbolizer(
+          const ms.RasterSymbolizer(
             channelSelection: ms.ChannelSelection(
               redChannel: ms.Channel(
                 sourceChannelName: '1',
@@ -472,9 +472,9 @@ void main() {
   // -----------------------------------------------------------------------
   group('Write: TextSymbolizer strConcat label', () {
     test('strConcat label writes as Concatenate', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.TextSymbolizer(
+          const ms.TextSymbolizer(
             label: ms.FunctionExpression(ms.ArgsFunction(
               name: 'strConcat',
               args: [
@@ -495,9 +495,9 @@ void main() {
     });
 
     test('unsupported label expression emits warning', () {
-      const style = ms.Style(rules: [
+      final style = ms.Style(rules: [
         ms.Rule(symbolizers: [
-          ms.TextSymbolizer(
+          const ms.TextSymbolizer(
             label: ms.FunctionExpression(ms.ArgsFunction(
               name: 'someUnknownFunc',
               args: [],

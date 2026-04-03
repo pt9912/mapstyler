@@ -56,17 +56,17 @@ void main() async {
 // ---------------------------------------------------------------------------
 
 Style _buildStyle() {
-  return const Style(
+  return Style(
     name: 'Programmatic Style',
     rules: [
       Rule(
         name: 'water',
-        filter: ComparisonFilter(
+        filter: const ComparisonFilter(
           operator: ComparisonOperator.eq,
           property: LiteralExpression('class'),
           value: LiteralExpression<Object>('ocean'),
         ),
-        symbolizers: [
+        symbolizers: const [
           FillSymbolizer(
             color: LiteralExpression('#0000ff'),
             opacity: LiteralExpression(0.6),
@@ -75,18 +75,18 @@ Style _buildStyle() {
       ),
       Rule(
         name: 'roads',
-        symbolizers: [
+        symbolizers: const [
           LineSymbolizer(
             color: LiteralExpression('#333333'),
             width: LiteralExpression(2.0),
             cap: 'round',
           ),
         ],
-        scaleDenominator: ScaleDenominator(min: 2133, max: 545979),
+        scaleDenominator: const ScaleDenominator(min: 2133, max: 545979),
       ),
       Rule(
         name: 'pois',
-        symbolizers: [
+        symbolizers: const [
           MarkSymbolizer(
             wellKnownName: 'circle',
             radius: LiteralExpression(5.0),

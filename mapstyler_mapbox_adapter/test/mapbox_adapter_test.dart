@@ -238,7 +238,7 @@ void main() {
   // ---------------------------------------------------------------------------
   group('write', () {
     test('FillSymbolizer → fill layer', () async {
-      const style = Style(rules: [
+      final style = Style(rules: [
         Rule(name: 'water', symbolizers: [
           FillSymbolizer(
             color: LiteralExpression('#0000ff'),
@@ -256,7 +256,7 @@ void main() {
     });
 
     test('LineSymbolizer → line layer', () async {
-      const style = Style(rules: [
+      final style = Style(rules: [
         Rule(symbolizers: [
           LineSymbolizer(
             color: LiteralExpression('#333'),
@@ -275,7 +275,7 @@ void main() {
     });
 
     test('MarkSymbolizer(circle) → circle layer', () async {
-      const style = Style(rules: [
+      final style = Style(rules: [
         Rule(symbolizers: [
           MarkSymbolizer(
             wellKnownName: 'circle',
@@ -290,7 +290,7 @@ void main() {
     });
 
     test('non-circle MarkSymbolizer produces warning', () async {
-      const style = Style(rules: [
+      final style = Style(rules: [
         Rule(symbolizers: [
           MarkSymbolizer(wellKnownName: 'square'),
         ]),
@@ -301,7 +301,7 @@ void main() {
     });
 
     test('TextSymbolizer → symbol layer', () async {
-      const style = Style(rules: [
+      final style = Style(rules: [
         Rule(symbolizers: [
           TextSymbolizer(
             label: FunctionExpression(PropertyGet('name')),
