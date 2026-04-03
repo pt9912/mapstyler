@@ -8,6 +8,7 @@ Diese Datei beschreibt das gemeinsame Style-Modell des `mapstyler`-
 - die zentralen Typen `Style`, `Rule`, `Symbolizer`, `Filter`,
   `Expression`, `Geometry`, `StyledFeature`,
   `StyledFeatureCollection`
+- geplante Geometrie-Operationen (`simplifyLine`, `simplifyRing`)
 
 Architektur, format-spezifische Details und Rendering werden in
 separaten Dokumenten beschrieben.
@@ -197,6 +198,54 @@ kleines Geometriemodell:
 Das Modell ist absichtlich unabhängig von `gml4dart` oder GeoJSON-
 Bibliotheken. Adapter wie `mapstyler_sld_adapter` übernehmen die
 Übersetzung an ihren jeweiligen Grenzen.
+
+### Geometrie-Vereinfachung (geplant)
+
+`mapstyler_style` wird Funktionen zur Koordinatenreduktion
+bereitstellen, die auf dem Tupel-Format `List<(double, double)>`
+von `LineStringGeometry` und `PolygonGeometry` arbeiten. Die
+Algorithmen sind pure Dart ohne externe Abhaengigkeiten.
+
+**Fuer offene Linien:**
+
+```dart
+/// Zweistufige Vereinfachung: radiale Vorfilterung + Douglas-Peucker.
+/// Start- und Endpunkt bleiben erhalten.
+List<(double, double)> simplifyLine(
+  List<(double, double)> coords,
+  double tolerance,
+);
+```
+
+**Fuer geschlossene Polygon-Ringe:**
+
+```dart
+/// Ringspezifische Vereinfachung: Ringschluss wird gesichert,
+/// Mindestpunktzahl ist 4 (3 eindeutige + Schluss).
+List<(double, double)> simplifyRing(
+  List<(double, double)> coords,
+  double tolerance,
+);
+```
+
+**Hilfsfunktionen (packageintern):**
+
+- `radialFilter(coords, tolerance)` — entfernt Punkte naeher als
+  `tolerance` am vorherigen behaltenen Punkt. O(n), ein Durchgang.
+- `douglasPeucker(coords, tolerance)` — rekursive formerhalende
+  Vereinfachung. O(n log n) durchschnittlich.
+
+Die Toleranz ist in derselben Einheit wie die Koordinaten (Grad
+bei EPSG:4326, Meter bei projizierten CRS). Die Berechnung einer
+sinnvollen Toleranz aus Kartenaufloesung oder Zoomstufe ist Sache
+des Aufrufers, nicht des Kernmodells.
+
+Consumer:
+- `mapstyler_gdal_adapter` — vereinfacht waehrend der
+  Feature-Iteration
+- `flutter_mapstyler` — kann bei Bedarf zur Renderzeit
+  vereinfachen
+- Demo-App-Loader — koennen beim Import vereinfachen
 
 ### StyledFeature und StyledFeatureCollection
 
