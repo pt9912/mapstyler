@@ -1343,6 +1343,111 @@ void main() {
         isTrue,
       );
     });
+
+    test('numeric _compare path (gt with numeric property and value)', () {
+      expect(
+        evaluateFilter(
+          const ComparisonFilter(
+            operator: ComparisonOperator.gt,
+            property: LiteralExpression('score'),
+            value: LiteralExpression<Object>(50),
+          ),
+          const {'score': 100},
+        ),
+        isTrue,
+      );
+      expect(
+        evaluateFilter(
+          const ComparisonFilter(
+            operator: ComparisonOperator.lt,
+            property: LiteralExpression('score'),
+            value: LiteralExpression<Object>(50),
+          ),
+          const {'score': 100},
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('evaluateExpression coverage gaps', () {
+    test('null expression returns null', () {
+      expect(evaluateExpression<double>(null, const {}), isNull);
+      expect(evaluateExpression<String>(null, const {}), isNull);
+    });
+
+    test('_toInt with double and string args via strSubstring', () {
+      // strSubstring calls _toInt on its positional arguments.
+      // Pass a double (3.7 → 3) and a string ('6') to exercise both paths.
+      expect(
+        evaluateExpression(
+          const FunctionExpression<Object>(ArgsFunction(
+            name: 'strSubstring',
+            args: [
+              LiteralExpression<Object>('Hello World'),
+              LiteralExpression<Object>(3.7), // num → _toInt
+              LiteralExpression<Object>('8'), // String → _toInt
+            ],
+          )),
+          const {},
+        ),
+        'lo Wo',
+      );
+    });
+
+    test('parseBoolean with y/on/n/off string variants', () {
+      for (final (input, expected) in [
+        ('y', true),
+        ('on', true),
+        ('n', false),
+        ('off', false),
+        ('Y', true),
+        ('ON', true),
+        ('N', false),
+        ('OFF', false),
+      ]) {
+        expect(
+          evaluateExpression(
+            FunctionExpression<Object>(ArgsFunction(
+              name: 'parseBoolean',
+              args: [LiteralExpression<Object>(input)],
+            )),
+            const {},
+          ),
+          expected,
+          reason: 'parseBoolean("$input") should be $expected',
+        );
+      }
+    });
+  });
+
+  group('RTree.any with branches', () {
+    test('any() traverses branch nodes on large trees', () {
+      // >9 features forces the R-Tree to create branch nodes
+      // (maxEntries default is 9).
+      final geometries = <Geometry>[
+        for (var i = 0; i < 20; i++)
+          PointGeometry(i.toDouble(), i.toDouble()),
+      ];
+      final tree = RTree.bulk(geometries);
+      expect(tree.length, 20);
+
+      // Point 10,10 exists — any() must traverse branches to find it.
+      expect(
+        tree.any(const EnvelopeGeometry(
+          minX: 9.5, minY: 9.5, maxX: 10.5, maxY: 10.5,
+        )),
+        isTrue,
+      );
+
+      // No point near 99,99 — any() traverses all branches, returns false.
+      expect(
+        tree.any(const EnvelopeGeometry(
+          minX: 98, minY: 98, maxX: 100, maxY: 100,
+        )),
+        isFalse,
+      );
+    });
   });
 
   group('MarkPainter paint branches', () {
