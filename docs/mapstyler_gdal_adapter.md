@@ -83,12 +83,27 @@ Original-Aufloesung wird nie als vollstaendige
 | `MultiPoint`              | mehrere `PointGeometry`  | Aufspaltung in Einzel-Features   |
 | `MultiLineString`         | mehrere `LineStringGeometry` | Aufspaltung in Einzel-Features |
 | `MultiPolygon`            | mehrere `PolygonGeometry` | Aufspaltung in Einzel-Features  |
-| `GeometryCollection`      | --                        | Warnung, kein Mapping            |
+| `GeometryCollection`      | --                        | Warning in `LoadVectorResult`     |
 
 Multi-Geometrien werden in einzelne Features aufgespalten (analog zum
 bestehenden `geojson_loader.dart` in der Demo-App). Die Properties
 werden dabei kopiert, die Feature-ID um einen Suffix erweitert
 (`'$fid-$i'`).
+
+### Vertrag fuer verworfene Geometrien
+
+Verworfene oder nicht konvertierbare Geometrien fuehren nie zu
+Exceptions, sondern werden ueber `LoadVectorResult.warnings`
+gemeldet:
+
+| Situation | Verhalten |
+|---|---|
+| Null-Geometrie | Feature uebersprungen, Warning |
+| `GeometryCollection` | Feature uebersprungen, Warning |
+| Interior-Ring degeneriert nach Vereinfachung | Ring stillschweigend verworfen (kein Warning, da das Polygon selbst erhalten bleibt) |
+
+Es gibt kein stilles Droppen ohne Rueckmeldung an den Aufrufer —
+jedes uebersprungene Feature erscheint in der Warning-Liste.
 
 ## Geometrie-Vereinfachung (Douglas-Peucker)
 
@@ -594,8 +609,8 @@ Loesung:
   `mapstyler_style`-Geometrien abbilden
 - `MultiPoint`, `MultiLineString`, `MultiPolygon` in mehrere
   `StyledFeature`-Instanzen aufspalten
-- `GeometryCollection` in der ersten Version bewusst nicht unterstuetzen:
-  Warnung oder Fehler sammeln, aber nicht raten
+- `GeometryCollection` bewusst nicht unterstuetzen: Feature wird
+  uebersprungen, Warning in `LoadVectorResult.warnings` gesammelt
 - Feature-IDs fuer Multi-Geometrien stabil erweitern, z.B. `fid`,
   `fid-0`, `fid-1`
 

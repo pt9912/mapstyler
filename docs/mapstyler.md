@@ -8,7 +8,7 @@ Diese Datei beschreibt das gemeinsame Style-Modell des `mapstyler`-
 - die zentralen Typen `Style`, `Rule`, `Symbolizer`, `Filter`,
   `Expression`, `Geometry`, `StyledFeature`,
   `StyledFeatureCollection`
-- geplante Geometrie-Operationen (`simplifyLine`, `simplifyRing`)
+- Geometrie-Vereinfachung (`simplifyLine`, `simplifyRing`)
 
 Architektur, format-spezifische Details und Rendering werden in
 separaten Dokumenten beschrieben.
