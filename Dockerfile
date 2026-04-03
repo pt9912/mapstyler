@@ -13,9 +13,9 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# Copy workspace pubspec, exclude Flutter workspace members
+# Copy workspace pubspec, exclude Flutter and GDAL workspace members
 COPY pubspec.yaml pubspec.yaml
-RUN sed -i '/flutter_mapstyler/d;/demo\/mapstyler_demo/d' pubspec.yaml
+RUN sed -i '/flutter_mapstyler/d;/demo\/mapstyler_demo/d;/mapstyler_gdal_adapter/d' pubspec.yaml
 
 # Copy package pubspecs for dependency caching
 COPY mapstyler_style/pubspec.yaml mapstyler_style/pubspec.yaml
@@ -24,18 +24,16 @@ COPY mapstyler_mapbox_adapter/pubspec.yaml mapstyler_mapbox_adapter/pubspec.yaml
 COPY mapstyler_sld_adapter/pubspec.yaml mapstyler_sld_adapter/pubspec.yaml
 COPY qml4dart/pubspec.yaml qml4dart/pubspec.yaml
 COPY mapstyler_qml_adapter/pubspec.yaml mapstyler_qml_adapter/pubspec.yaml
-COPY mapstyler_gdal_adapter/pubspec.yaml mapstyler_gdal_adapter/pubspec.yaml
 
 # Placeholder libs so pub get can resolve
 RUN mkdir -p mapstyler_style/lib mapbox4dart/lib mapstyler_mapbox_adapter/lib mapstyler_sld_adapter/lib \
-    qml4dart/lib mapstyler_qml_adapter/lib mapstyler_gdal_adapter/lib \
+    qml4dart/lib mapstyler_qml_adapter/lib \
     && touch mapstyler_style/lib/mapstyler_style.dart \
     && touch mapbox4dart/lib/mapbox4dart.dart \
     && touch mapstyler_mapbox_adapter/lib/mapstyler_mapbox_adapter.dart \
     && touch mapstyler_sld_adapter/lib/mapstyler_sld_adapter.dart \
     && touch qml4dart/lib/qml4dart.dart \
-    && touch mapstyler_qml_adapter/lib/mapstyler_qml_adapter.dart \
-    && touch mapstyler_gdal_adapter/lib/mapstyler_gdal_adapter.dart
+    && touch mapstyler_qml_adapter/lib/mapstyler_qml_adapter.dart
 
 RUN dart pub get
 
@@ -46,6 +44,23 @@ COPY mapstyler_mapbox_adapter/ mapstyler_mapbox_adapter/
 COPY mapstyler_sld_adapter/ mapstyler_sld_adapter/
 COPY qml4dart/ qml4dart/
 COPY mapstyler_qml_adapter/ mapstyler_qml_adapter/
+
+## ---------------------------------------------------------------------------
+## GDAL base (separate, da gdal_dart eine externe FFI-Abhaengigkeit ist
+## und dessen Verfuegbarkeit die shared base nicht blockieren soll)
+## ---------------------------------------------------------------------------
+FROM base AS gdal-base
+
+COPY mapstyler_gdal_adapter/pubspec.yaml mapstyler_gdal_adapter/pubspec.yaml
+
+# Re-add to workspace
+RUN sed -i '/^workspace:/a\  - mapstyler_gdal_adapter' pubspec.yaml
+
+RUN mkdir -p mapstyler_gdal_adapter/lib \
+    && touch mapstyler_gdal_adapter/lib/mapstyler_gdal_adapter.dart
+
+RUN dart pub get
+
 COPY mapstyler_gdal_adapter/ mapstyler_gdal_adapter/
 
 ## ---------------------------------------------------------------------------
@@ -436,17 +451,17 @@ RUN dart pub publish --dry-run
 ## ---------------------------------------------------------------------------
 
 # Analyze
-FROM base AS gdal-analyze
+FROM gdal-base AS gdal-analyze
 WORKDIR /app/mapstyler_gdal_adapter
 RUN dart analyze
 
 # Test
-FROM base AS gdal-test
+FROM gdal-base AS gdal-test
 WORKDIR /app/mapstyler_gdal_adapter
 RUN dart test
 
 # Coverage
-FROM base AS gdal-coverage
+FROM gdal-base AS gdal-coverage
 ARG COVERAGE_VERSION=1.15.0
 RUN dart pub global activate coverage ${COVERAGE_VERSION}
 ENV PATH="/root/.pub-cache/bin:${PATH}"
@@ -489,7 +504,7 @@ RUN awk -F'[,:]' -v min="$COVERAGE_MIN" '\
     }' coverage/lcov.info
 
 # Publish dry-run
-FROM base AS gdal-publish-check
+FROM gdal-base AS gdal-publish-check
 WORKDIR /app/mapstyler_gdal_adapter
 RUN dart pub publish --dry-run
 
