@@ -160,43 +160,43 @@ void main() {
 
   group('loadVectorFileMultiScaleSync', () {
     test('returns multiple LOD levels with tolerances', () {
-      final result = loadVectorFileMultiScaleSync(
+      final multi = loadVectorFileMultiScaleSync(
         _fixture('mixed.geojson'),
         tolerances: [1.0, 0.1],
       );
-      expect(result.keys, containsAll([0.0, 1.0, 0.1]));
-      final originalCount = result[0.0]!.features.length;
-      expect(result[1.0]!.features.length, originalCount);
-      expect(result[0.1]!.features.length, originalCount);
+      expect(multi.levels.keys, containsAll([0.0, 1.0, 0.1]));
+      final originalCount = multi.levels[0.0]!.features.length;
+      expect(multi.levels[1.0]!.features.length, originalCount);
+      expect(multi.levels[0.1]!.features.length, originalCount);
     });
 
     test('returns multiple LOD levels with tolerancesMeters', () {
-      final result = loadVectorFileMultiScaleSync(
+      final multi = loadVectorFileMultiScaleSync(
         _fixture('points.geojson'),
         tolerancesMeters: [10000, 1000],
       );
-      expect(result.keys, hasLength(3));
-      expect(result.containsKey(0.0), isTrue);
+      expect(multi.levels.keys, hasLength(3));
+      expect(multi.levels.containsKey(0.0), isTrue);
     });
 
     test('applies spatial and attribute filters', () {
-      final result = loadVectorFileMultiScaleSync(
+      final multi = loadVectorFileMultiScaleSync(
         _fixture('points.geojson'),
         tolerances: [0.5],
         spatialFilter: (minX: 13.0, minY: 52.0, maxX: 14.0, maxY: 53.0),
         attributeFilter: 'population > 1000000',
       );
-      expect(result[0.0]!.features, hasLength(1));
+      expect(multi.levels[0.0]!.features, hasLength(1));
     });
 
     test('selects layer by name', () {
       final layers = inspectVectorFileSync(_fixture('points.geojson'));
-      final result = loadVectorFileMultiScaleSync(
+      final multi = loadVectorFileMultiScaleSync(
         _fixture('points.geojson'),
         tolerances: [0.5],
         layerName: layers.first.name,
       );
-      expect(result[0.0]!.features, hasLength(2));
+      expect(multi.levels[0.0]!.features, hasLength(2));
     });
 
     test('asserts when neither tolerances nor tolerancesMeters set', () {
@@ -209,11 +209,11 @@ void main() {
 
   group('loadVectorFileMultiScale (async)', () {
     test('returns multiple LOD levels asynchronously', () async {
-      final result = await loadVectorFileMultiScale(
+      final multi = await loadVectorFileMultiScale(
         _fixture('points.geojson'),
         tolerances: [0.5],
       );
-      expect(result.keys, containsAll([0.0, 0.5]));
+      expect(multi.levels.keys, containsAll([0.0, 0.5]));
     });
   });
 }

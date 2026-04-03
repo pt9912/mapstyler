@@ -96,9 +96,9 @@ LoadVectorResult loadVectorFileSync(
 /// Loads multiple simplification levels in one iteration pass.
 ///
 /// Exactly one of [tolerances] or [tolerancesMeters] must be set.
-/// Returns a map from effective native tolerance to collection,
-/// plus a `0.0` key for the original geometries.
-Map<double, StyledFeatureCollection> loadVectorFileMultiScaleSync(
+/// Returns a [LoadVectorMultiScaleResult] with one collection per
+/// tolerance level plus any warnings about skipped features.
+LoadVectorMultiScaleResult loadVectorFileMultiScaleSync(
   String path, {
   List<double>? tolerances,
   List<double>? tolerancesMeters,
@@ -146,15 +146,25 @@ Map<double, StyledFeatureCollection> loadVectorFileMultiScaleSync(
     final buckets = <double, List<StyledFeature>>{
       for (final t in nativeTols) t: <StyledFeature>[],
     };
+    final warnings = <String>[];
 
     for (final f in layer.features) {
       final geometry = f.geometry;
-      if (geometry == null) continue;
+      if (geometry == null) {
+        warnings.add('Feature ${f.fid}: null geometry, skipped');
+        continue;
+      }
+
+      // Convert once at tolerance 0 to check for unsupported types.
+      final check = convertGeometry(geometry);
+      if (check.warning != null) {
+        warnings.add('Feature ${f.fid}: ${check.warning}');
+        continue;
+      }
 
       for (final tol in nativeTols) {
         final converted =
             convertGeometry(geometry, tolerance: tol > 0 ? tol : null);
-        if (converted.warning != null) continue;
 
         for (final (i, geo) in converted.geometries.indexed) {
           buckets[tol]!.add(StyledFeature(
@@ -168,10 +178,13 @@ Map<double, StyledFeatureCollection> loadVectorFileMultiScaleSync(
       }
     }
 
-    return {
-      for (final entry in buckets.entries)
-        entry.key: StyledFeatureCollection(entry.value),
-    };
+    return LoadVectorMultiScaleResult(
+      levels: {
+        for (final entry in buckets.entries)
+          entry.key: StyledFeatureCollection(entry.value),
+      },
+      warnings: warnings,
+    );
   } finally {
     ds.close();
   }

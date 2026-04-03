@@ -1,7 +1,5 @@
 import 'dart:isolate';
 
-import 'package:mapstyler_style/mapstyler_style.dart';
-
 import 'load_result.dart';
 import 'load_vector_file_sync.dart';
 import 'vector_layer_info.dart';
@@ -34,7 +32,7 @@ Future<LoadVectorResult> loadVectorFile(
 /// Exactly one of [tolerances] or [tolerancesMeters] must be set.
 /// Returns a map from effective native tolerance to collection,
 /// plus a `0.0` key for the original geometries.
-Future<Map<double, StyledFeatureCollection>> loadVectorFileMultiScale(
+Future<LoadVectorMultiScaleResult> loadVectorFileMultiScale(
   String path, {
   List<double>? tolerances,
   List<double>? tolerancesMeters,

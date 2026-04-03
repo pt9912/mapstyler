@@ -296,7 +296,7 @@ import 'package:mapstyler_gdal_adapter/mapstyler_gdal_adapter.dart';
 /// [spatialFilter] und [attributeFilter] werden serverseitig von
 /// OGR angewendet — nur passende Features ueberqueren die
 /// FFI-Grenze.
-Future<StyledFeatureCollection> loadVectorFile(
+Future<LoadVectorResult> loadVectorFile(
   String path, {
   int layerIndex = 0,
   String? layerName,
@@ -310,7 +310,7 @@ Future<StyledFeatureCollection> loadVectorFile(
 ///
 /// Identische Parameter wie [loadVectorFile], blockiert aber den
 /// aufrufenden Thread.
-StyledFeatureCollection loadVectorFileSync(
+LoadVectorResult loadVectorFileSync(
   String path, {
   int layerIndex = 0,
   String? layerName,
@@ -330,10 +330,11 @@ StyledFeatureCollection loadVectorFileSync(
 /// - [tolerancesMeters]: Toleranzen in Metern; der Adapter rechnet
 ///   intern in die native CRS-Einheit um
 ///
-/// Die Rueckgabe mappt die **effektiv verwendete native Toleranz**
-/// auf die jeweilige `StyledFeatureCollection`. Zusaetzlich wird immer
-/// eine Stufe `0.0` fuer die Originalgeometrien erzeugt.
-Future<Map<double, StyledFeatureCollection>> loadVectorFileMultiScale(
+/// Die Rueckgabe enthaelt pro Toleranzstufe eine
+/// `StyledFeatureCollection` sowie gesammelte Warnings.
+/// Zusaetzlich wird immer eine Stufe `0.0` fuer die
+/// Originalgeometrien erzeugt.
+Future<LoadVectorMultiScaleResult> loadVectorFileMultiScale(
   String path, {
   List<double>? tolerances,
   List<double>? tolerancesMeters,
@@ -344,7 +345,7 @@ Future<Map<double, StyledFeatureCollection>> loadVectorFileMultiScale(
 });
 
 /// Synchrone Variante fuer CLI-Tools und Server-Anwendungen.
-Map<double, StyledFeatureCollection> loadVectorFileMultiScaleSync(
+LoadVectorMultiScaleResult loadVectorFileMultiScaleSync(
   String path, {
   List<double>? tolerances,
   List<double>? tolerancesMeters,
@@ -373,7 +374,9 @@ class VectorLayerInfo {
   final int featureCount;
   final List<({String name, String type})> fields;
   final ({double minX, double minY, double maxX, double maxY})? extent;
-  final String? geometryType; // z.B. 'Point', 'Polygon', 'MultiLineString'
+  final String? geometryType; // z.B. 'Point', 'Polygon' — derzeit
+                              // meist null (gdal_dart exponiert den
+                              // Getter noch nicht)
   final String? crs;          // z.B. 'EPSG:4326'
 }
 ```
