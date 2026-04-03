@@ -9,6 +9,10 @@ import 'vector_layer_info.dart';
 /// Blocks the calling thread.  For Flutter apps prefer the async
 /// variant [loadVectorFile] which runs in a separate isolate.
 ///
+/// **Layer selection**: [layerName] and [layerIndex] are mutually
+/// exclusive.  When [layerName] is set, [layerIndex] is ignored.
+/// When neither is set, layer 0 is used.
+///
 /// [simplifyTolerance] is in the native CRS unit of the source data
 /// (degrees for EPSG:4326, metres for projected CRS).
 /// [simplifyToleranceMeters] is always in metres — the adapter
@@ -163,6 +167,14 @@ List<VectorLayerInfo> inspectVectorFileSync(String path) {
   try {
     return List.generate(ds.layerCount, (i) {
       final layer = ds.layer(i);
+      String? crs;
+      final srs = layer.spatialReference;
+      if (srs != null) {
+        final authority = srs.authorityName;
+        final code = srs.authorityCode;
+        if (authority != null && code != null) crs = '$authority:$code';
+        srs.close();
+      }
       return VectorLayerInfo(
         name: layer.name,
         featureCount: layer.featureCount,
@@ -170,6 +182,8 @@ List<VectorLayerInfo> inspectVectorFileSync(String path) {
             .map((f) => (name: f.name, type: f.type.name))
             .toList(),
         extent: layer.extent,
+        // geometryType: not yet exposed by gdal_dart
+        crs: crs,
       );
     });
   } finally {

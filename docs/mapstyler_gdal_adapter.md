@@ -266,7 +266,9 @@ import 'package:mapstyler_gdal_adapter/mapstyler_gdal_adapter.dart';
 /// [path] kann auf jedes von OGR unterstuetzte Vektorformat zeigen
 /// (Shapefile, GeoJSON, GeoPackage, KML, GML, MapInfo, ...).
 ///
-/// [layerIndex] oder [layerName] waehlen den Layer (Standard: 0).
+/// [layerName] und [layerIndex] sind exklusiv. Wenn [layerName]
+/// gesetzt ist, wird [layerIndex] ignoriert. Ohne Angabe wird
+/// Layer 0 verwendet.
 ///
 /// [simplifyTolerance] aktiviert die zweistufige Geometrie-
 /// Vereinfachung (radiale Vorfilterung + Douglas-Peucker) waehrend
@@ -356,6 +358,8 @@ class VectorLayerInfo {
   final int featureCount;
   final List<({String name, String type})> fields;
   final ({double minX, double minY, double maxX, double maxY})? extent;
+  final String? geometryType; // z.B. 'Point', 'Polygon', 'MultiLineString'
+  final String? crs;          // z.B. 'EPSG:4326'
 }
 ```
 
@@ -488,9 +492,9 @@ mapstyler_gdal_adapter/
   pubspec.yaml
 ```
 
-Die Vereinfachungs-Algorithmen (`simplifyLine`, `simplifyRing`,
-`radialFilter`, `douglasPeucker`) liegen in `mapstyler_style` und
-werden hier nur aufgerufen.
+Die oeffentlichen Vereinfachungsfunktionen `simplifyLine` und
+`simplifyRing` liegen in `mapstyler_style` und werden hier nur
+aufgerufen.
 
 ## Abhaengigkeiten
 
