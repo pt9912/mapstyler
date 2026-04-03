@@ -75,14 +75,6 @@ Geplante Punkte:
 - `copyWith()` auf `Expression` und `Filter` wird bewusst nicht
   eingefuehrt — sealed Types mit wenigen Feldern profitieren davon
   nicht; Rekonstruktion ist der natuerliche Weg.
-- Geometrie-Vereinfachung als Teil des Kernmodells: zweistufiger
-  Algorithmus (radiale Vorfilterung + Douglas-Peucker) fuer offene
-  Linien sowie ringspezifische Variante fuer Polygone (Ringschluss,
-  Mindestpunktzahl, Loch-Verwerfen bei Degeneration).  Arbeitet auf
-  `List<(double, double)>` — dem Koordinatenformat von
-  `LineStringGeometry` und `PolygonGeometry`.  Damit koennen alle
-  Consumer (GDAL-Adapter, Renderer, Demo-Loader) die Vereinfachung
-  direkt nutzen, ohne ein zusaetzliches Package einzubinden.
 
 Umgesetzt (Feature-Typen):
 
@@ -92,6 +84,16 @@ Umgesetzt (Feature-Typen):
   Flutter-Abhaengigkeit erzeugen. Der R-Tree-Index bleibt als
   Extension in `flutter_mapstyler`; bestehende Imports bleiben
   dank Re-Export kompatibel.
+
+Umgesetzt (Geometrie-Vereinfachung):
+
+- Geometrie-Vereinfachung als Teil des Kernmodells: zweistufiger
+  Algorithmus (radiale Vorfilterung + Douglas-Peucker) fuer offene
+  Linien sowie ringspezifische Variante fuer Polygone. Arbeitet auf
+  `List<(double, double)>` — dem Koordinatenformat von
+  `LineStringGeometry` und `PolygonGeometry`. Damit koennen alle
+  Consumer (GDAL-Adapter, Renderer, Demo-Loader) die Vereinfachung
+  direkt nutzen, ohne ein zusaetzliches Package einzubinden.
 
 ### `flutter_mapstyler`
 

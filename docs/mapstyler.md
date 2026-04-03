@@ -199,10 +199,10 @@ Das Modell ist absichtlich unabhängig von `gml4dart` oder GeoJSON-
 Bibliotheken. Adapter wie `mapstyler_sld_adapter` übernehmen die
 Übersetzung an ihren jeweiligen Grenzen.
 
-### Geometrie-Vereinfachung (geplant)
+### Geometrie-Vereinfachung
 
-`mapstyler_style` wird Funktionen zur Koordinatenreduktion
-bereitstellen, die auf dem Tupel-Format `List<(double, double)>`
+`mapstyler_style` stellt Funktionen zur Koordinatenreduktion
+bereit, die auf dem Tupel-Format `List<(double, double)>`
 von `LineStringGeometry` und `PolygonGeometry` arbeiten. Die
 Algorithmen sind pure Dart ohne externe Abhaengigkeiten.
 
