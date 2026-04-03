@@ -3,7 +3,8 @@
 ///
 /// This package provides the common type system for the mapstyler
 /// ecosystem: [Style], [Rule], [Symbolizer], [Filter], [Expression],
-/// and the [StyleParser] interface.
+/// [Geometry], [StyledFeature], [StyledFeatureCollection], and the
+/// [StyleParser] interface.
 ///
 /// ```dart
 /// import 'package:mapstyler_style/mapstyler_style.dart';
