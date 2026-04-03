@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'rule.dart';
+import 'sentinel.dart';
 
 /// A named collection of styling rules.
 ///
@@ -27,9 +28,20 @@ class Style {
   final String? name;
 
   /// The styling rules, evaluated in order.
+  ///
+  /// The list is unmodifiable.  Use [copyWith] to create a modified copy.
   final List<Rule> rules;
 
-  const Style({this.name, this.rules = const []});
+  /// Creates a style.
+  ///
+  /// [rules] is defensively copied into an unmodifiable list.
+  Style({this.name, List<Rule> rules = const []})
+      : rules = List.unmodifiable(rules);
+
+  /// Internal constructor that skips the [List.unmodifiable] copy.
+  ///
+  /// Use only when [rules] is already unmodifiable (e.g. from [copyWith]).
+  Style._internal({this.name, required this.rules});
 
   /// Deserializes a [Style] from a JSON map.
   factory Style.fromJson(Map<String, dynamic> json) => Style(
@@ -42,6 +54,26 @@ class Style {
   /// Deserializes a [Style] from a JSON string.
   factory Style.fromJsonString(String jsonString) =>
       Style.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Nullable fields accept an explicit `null` to clear the value.
+  /// Omitted fields retain their current value.
+  ///
+  /// Expected types: [name] → `String?`, [rules] → `List<Rule>?`.
+  Style copyWith({
+    Object? name = absent,
+    List<Rule>? rules,
+  }) =>
+      rules != null
+          ? Style(
+              name: name is Absent ? this.name : name as String?,
+              rules: rules,
+            )
+          : Style._internal(
+              name: name is Absent ? this.name : name as String?,
+              rules: this.rules,
+            );
 
   /// Serializes this style to a JSON map.
   Map<String, dynamic> toJson() => {

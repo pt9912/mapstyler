@@ -1,4 +1,5 @@
 import 'expression.dart';
+import 'sentinel.dart';
 
 /// Defines how features are visually rendered on a map.
 ///
@@ -68,6 +69,35 @@ final class FillSymbolizer extends Symbolizer {
         outlineWidth: _optExpr(json, 'outlineWidth', _dbl),
       );
 
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Pass `null` to clear a field.  Omit a field to keep its value.
+  ///
+  /// Expected types: [color] → `Expression<String>?`,
+  /// [opacity]/[fillOpacity]/[outlineWidth] → `Expression<double>?`,
+  /// [outlineColor] → `Expression<String>?`.
+  FillSymbolizer copyWith({
+    Object? color = absent,
+    Object? opacity = absent,
+    Object? fillOpacity = absent,
+    Object? outlineColor = absent,
+    Object? outlineWidth = absent,
+  }) =>
+      FillSymbolizer(
+        color: color is Absent ? this.color : color as Expression<String>?,
+        opacity:
+            opacity is Absent ? this.opacity : opacity as Expression<double>?,
+        fillOpacity: fillOpacity is Absent
+            ? this.fillOpacity
+            : fillOpacity as Expression<double>?,
+        outlineColor: outlineColor is Absent
+            ? this.outlineColor
+            : outlineColor as Expression<String>?,
+        outlineWidth: outlineWidth is Absent
+            ? this.outlineWidth
+            : outlineWidth as Expression<double>?,
+      );
+
   @override
   Map<String, dynamic> toJson() => {
         'kind': 'Fill',
@@ -100,6 +130,12 @@ final class LineSymbolizer extends Symbolizer {
   final Expression<String>? color;
   final Expression<double>? width;
   final Expression<double>? opacity;
+  /// Optional dash pattern as alternating dash/gap lengths.
+  ///
+  /// Unlike [Style.rules] and [Rule.symbolizers], this list is **not**
+  /// defensively copied — the `const` constructor is preserved so that
+  /// compile-time constant symbolizers remain possible.  Callers should
+  /// treat the list as immutable.
   final List<double>? dasharray;
   final String? cap;
   final String? join;
@@ -125,6 +161,34 @@ final class LineSymbolizer extends Symbolizer {
         join: json['join'] as String?,
       );
 
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Pass `null` to clear a field.  Omit a field to keep its value.
+  ///
+  /// Expected types: [color] → `Expression<String>?`,
+  /// [width]/[opacity] → `Expression<double>?`,
+  /// [dasharray] → `List<double>?`,
+  /// [cap]/[join] → `String?`.
+  LineSymbolizer copyWith({
+    Object? color = absent,
+    Object? width = absent,
+    Object? opacity = absent,
+    Object? dasharray = absent,
+    Object? cap = absent,
+    Object? join = absent,
+  }) =>
+      LineSymbolizer(
+        color: color is Absent ? this.color : color as Expression<String>?,
+        width: width is Absent ? this.width : width as Expression<double>?,
+        opacity:
+            opacity is Absent ? this.opacity : opacity as Expression<double>?,
+        dasharray: dasharray is Absent
+            ? this.dasharray
+            : dasharray as List<double>?,
+        cap: cap is Absent ? this.cap : cap as String?,
+        join: join is Absent ? this.join : join as String?,
+      );
+
   @override
   Map<String, dynamic> toJson() => {
         'kind': 'Line',
@@ -143,11 +207,16 @@ final class LineSymbolizer extends Symbolizer {
           color == other.color &&
           width == other.width &&
           opacity == other.opacity &&
+          _nullableListEquals(dasharray, other.dasharray) &&
           cap == other.cap &&
           join == other.join;
 
   @override
-  int get hashCode => Object.hash(color, width, opacity, cap, join);
+  int get hashCode {
+    final dasharrayHash =
+        dasharray != null ? Object.hashAll(dasharray!) : null;
+    return Object.hash(color, width, opacity, dasharrayHash, cap, join);
+  }
 }
 
 /// Renders point features using well-known shapes (circle, square,
@@ -186,6 +255,39 @@ final class MarkSymbolizer extends Symbolizer {
         strokeColor: _optExpr(json, 'strokeColor', _str),
         strokeWidth: _optExpr(json, 'strokeWidth', _dbl),
         rotate: _optExpr(json, 'rotate', _dbl),
+      );
+
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Pass `null` to clear a nullable field.  Omit a field to keep its value.
+  ///
+  /// Expected types: [wellKnownName] → `String?`,
+  /// [radius]/[opacity]/[strokeWidth]/[rotate] → `Expression<double>?`,
+  /// [color]/[strokeColor] → `Expression<String>?`.
+  MarkSymbolizer copyWith({
+    String? wellKnownName,
+    Object? radius = absent,
+    Object? color = absent,
+    Object? opacity = absent,
+    Object? strokeColor = absent,
+    Object? strokeWidth = absent,
+    Object? rotate = absent,
+  }) =>
+      MarkSymbolizer(
+        wellKnownName: wellKnownName ?? this.wellKnownName,
+        radius:
+            radius is Absent ? this.radius : radius as Expression<double>?,
+        color: color is Absent ? this.color : color as Expression<String>?,
+        opacity:
+            opacity is Absent ? this.opacity : opacity as Expression<double>?,
+        strokeColor: strokeColor is Absent
+            ? this.strokeColor
+            : strokeColor as Expression<String>?,
+        strokeWidth: strokeWidth is Absent
+            ? this.strokeWidth
+            : strokeWidth as Expression<double>?,
+        rotate:
+            rotate is Absent ? this.rotate : rotate as Expression<double>?,
       );
 
   @override
@@ -245,6 +347,30 @@ final class IconSymbolizer extends Symbolizer {
         size: _optExpr(json, 'size', _dbl),
         opacity: _optExpr(json, 'opacity', _dbl),
         rotate: _optExpr(json, 'rotate', _dbl),
+      );
+
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Pass `null` to clear a nullable field.  Omit a field to keep its value.
+  ///
+  /// Expected types: [image] → `Expression<String>?`,
+  /// [format] → `String?`,
+  /// [size]/[opacity]/[rotate] → `Expression<double>?`.
+  IconSymbolizer copyWith({
+    Expression<String>? image,
+    Object? format = absent,
+    Object? size = absent,
+    Object? opacity = absent,
+    Object? rotate = absent,
+  }) =>
+      IconSymbolizer(
+        image: image ?? this.image,
+        format: format is Absent ? this.format : format as String?,
+        size: size is Absent ? this.size : size as Expression<double>?,
+        opacity:
+            opacity is Absent ? this.opacity : opacity as Expression<double>?,
+        rotate:
+            rotate is Absent ? this.rotate : rotate as Expression<double>?,
       );
 
   @override
@@ -314,6 +440,44 @@ final class TextSymbolizer extends Symbolizer {
         haloColor: _optExpr(json, 'haloColor', _str),
         haloWidth: _optExpr(json, 'haloWidth', _dbl),
         placement: json['placement'] as String?,
+      );
+
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Pass `null` to clear a nullable field.  Omit a field to keep its value.
+  ///
+  /// Expected types: [label] → `Expression<String>?`,
+  /// [color]/[haloColor] → `Expression<String>?`,
+  /// [size]/[opacity]/[rotate]/[haloWidth] → `Expression<double>?`,
+  /// [font]/[placement] → `String?`.
+  TextSymbolizer copyWith({
+    Expression<String>? label,
+    Object? color = absent,
+    Object? size = absent,
+    Object? font = absent,
+    Object? opacity = absent,
+    Object? rotate = absent,
+    Object? haloColor = absent,
+    Object? haloWidth = absent,
+    Object? placement = absent,
+  }) =>
+      TextSymbolizer(
+        label: label ?? this.label,
+        color: color is Absent ? this.color : color as Expression<String>?,
+        size: size is Absent ? this.size : size as Expression<double>?,
+        font: font is Absent ? this.font : font as String?,
+        opacity:
+            opacity is Absent ? this.opacity : opacity as Expression<double>?,
+        rotate:
+            rotate is Absent ? this.rotate : rotate as Expression<double>?,
+        haloColor: haloColor is Absent
+            ? this.haloColor
+            : haloColor as Expression<String>?,
+        haloWidth: haloWidth is Absent
+            ? this.haloWidth
+            : haloWidth as Expression<double>?,
+        placement:
+            placement is Absent ? this.placement : placement as String?,
       );
 
   @override
@@ -398,14 +562,19 @@ final class ColorMapEntry {
 final class ColorMap {
   /// The interpolation mode: `ramp`, `intervals`, or `values`.
   final String type;
+
+  /// The list is unmodifiable.
   final List<ColorMapEntry> colorMapEntries;
   final bool? extended;
 
-  const ColorMap({
+  /// Creates a color map.
+  ///
+  /// [colorMapEntries] is defensively copied into an unmodifiable list.
+  ColorMap({
     required this.type,
-    this.colorMapEntries = const [],
+    List<ColorMapEntry> colorMapEntries = const [],
     this.extended,
-  });
+  }) : colorMapEntries = List.unmodifiable(colorMapEntries);
 
   factory ColorMap.fromJson(Map<String, dynamic> json) => ColorMap(
         type: json['type'] as String,
@@ -605,6 +774,53 @@ final class RasterSymbolizer extends Symbolizer {
         contrast: _optExpr(json, 'contrast', _dbl),
       );
 
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Pass `null` to clear a nullable field.  Omit a field to keep its value.
+  ///
+  /// Expected types:
+  /// [opacity]/[hueRotate]/[brightnessMin]/[brightnessMax]/[saturation]/[contrast]
+  /// → `Expression<double>?`,
+  /// [colorMap] → `ColorMap?`, [channelSelection] → `ChannelSelection?`,
+  /// [contrastEnhancement] → `ContrastEnhancement?`.
+  RasterSymbolizer copyWith({
+    Object? opacity = absent,
+    Object? colorMap = absent,
+    Object? channelSelection = absent,
+    Object? contrastEnhancement = absent,
+    Object? hueRotate = absent,
+    Object? brightnessMin = absent,
+    Object? brightnessMax = absent,
+    Object? saturation = absent,
+    Object? contrast = absent,
+  }) =>
+      RasterSymbolizer(
+        opacity:
+            opacity is Absent ? this.opacity : opacity as Expression<double>?,
+        colorMap:
+            colorMap is Absent ? this.colorMap : colorMap as ColorMap?,
+        channelSelection: channelSelection is Absent
+            ? this.channelSelection
+            : channelSelection as ChannelSelection?,
+        contrastEnhancement: contrastEnhancement is Absent
+            ? this.contrastEnhancement
+            : contrastEnhancement as ContrastEnhancement?,
+        hueRotate: hueRotate is Absent
+            ? this.hueRotate
+            : hueRotate as Expression<double>?,
+        brightnessMin: brightnessMin is Absent
+            ? this.brightnessMin
+            : brightnessMin as Expression<double>?,
+        brightnessMax: brightnessMax is Absent
+            ? this.brightnessMax
+            : brightnessMax as Expression<double>?,
+        saturation: saturation is Absent
+            ? this.saturation
+            : saturation as Expression<double>?,
+        contrast:
+            contrast is Absent ? this.contrast : contrast as Expression<double>?,
+      );
+
   @override
   Map<String, dynamic> toJson() => {
         'kind': 'Raster',
@@ -647,6 +863,12 @@ bool _listEquals<T>(List<T> a, List<T> b) {
     if (a[i] != b[i]) return false;
   }
   return true;
+}
+
+bool _nullableListEquals<T>(List<T>? a, List<T>? b) {
+  if (identical(a, b)) return true;
+  if (a == null || b == null) return false;
+  return _listEquals(a, b);
 }
 
 // -- Helpers --

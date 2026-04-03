@@ -1,4 +1,5 @@
 import 'filter.dart';
+import 'sentinel.dart';
 import 'symbolizer.dart';
 
 /// A zoom-level range that controls when a [Rule] is active.
@@ -21,6 +22,21 @@ class ScaleDenominator {
       ScaleDenominator(
         min: (json['min'] as num?)?.toDouble(),
         max: (json['max'] as num?)?.toDouble(),
+      );
+
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Nullable fields accept an explicit `null` to clear the value.
+  /// Omitted fields retain their current value.
+  ///
+  /// Expected types: [min] → `double?`, [max] → `double?`.
+  ScaleDenominator copyWith({
+    Object? min = absent,
+    Object? max = absent,
+  }) =>
+      ScaleDenominator(
+        min: min is Absent ? this.min : min as double?,
+        max: max is Absent ? this.max : max as double?,
       );
 
   /// Serializes to a JSON map.
@@ -54,15 +70,28 @@ class Rule {
   final Filter? filter;
 
   /// The symbolizers that define how matched features are rendered.
+  ///
+  /// The list is unmodifiable.  Use [copyWith] to create a modified copy.
   final List<Symbolizer> symbolizers;
 
   /// An optional scale range that controls when this rule is active.
   final ScaleDenominator? scaleDenominator;
 
-  const Rule({
+  /// Creates a rule.
+  ///
+  /// [symbolizers] is defensively copied into an unmodifiable list.
+  Rule({
     this.name,
     this.filter,
-    this.symbolizers = const [],
+    List<Symbolizer> symbolizers = const [],
+    this.scaleDenominator,
+  }) : symbolizers = List.unmodifiable(symbolizers);
+
+  /// Internal constructor that skips the [List.unmodifiable] copy.
+  Rule._internal({
+    this.name,
+    this.filter,
+    required this.symbolizers,
     this.scaleDenominator,
   });
 
@@ -80,6 +109,42 @@ class Rule {
                 json['scaleDenominator'] as Map<String, dynamic>)
             : null,
       );
+
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Nullable fields accept an explicit `null` to clear the value.
+  /// Omitted fields retain their current value.
+  ///
+  /// Expected types: [name] → `String?`, [filter] → `Filter?`,
+  /// [symbolizers] → `List<Symbolizer>?`,
+  /// [scaleDenominator] → `ScaleDenominator?`.
+  Rule copyWith({
+    Object? name = absent,
+    Object? filter = absent,
+    List<Symbolizer>? symbolizers,
+    Object? scaleDenominator = absent,
+  }) {
+    final resolvedName = name is Absent ? this.name : name as String?;
+    final resolvedFilter = filter is Absent ? this.filter : filter as Filter?;
+    final resolvedScale = scaleDenominator is Absent
+        ? this.scaleDenominator
+        : scaleDenominator as ScaleDenominator?;
+
+    if (symbolizers != null) {
+      return Rule(
+        name: resolvedName,
+        filter: resolvedFilter,
+        symbolizers: symbolizers,
+        scaleDenominator: resolvedScale,
+      );
+    }
+    return Rule._internal(
+      name: resolvedName,
+      filter: resolvedFilter,
+      symbolizers: this.symbolizers,
+      scaleDenominator: resolvedScale,
+    );
+  }
 
   /// Serializes this rule to a JSON map.
   Map<String, dynamic> toJson() => {
