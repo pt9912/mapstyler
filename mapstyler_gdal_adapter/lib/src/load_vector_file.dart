@@ -2,13 +2,14 @@ import 'dart:isolate';
 
 import 'package:mapstyler_style/mapstyler_style.dart';
 
+import 'load_result.dart';
 import 'load_vector_file_sync.dart';
 import 'vector_layer_info.dart';
 
 /// Loads vector features asynchronously in a separate isolate.
 ///
 /// See [loadVectorFileSync] for parameter documentation.
-Future<StyledFeatureCollection> loadVectorFile(
+Future<LoadVectorResult> loadVectorFile(
   String path, {
   int layerIndex = 0,
   String? layerName,

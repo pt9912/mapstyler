@@ -1,32 +1,44 @@
 import 'package:gdal_dart/gdal_dart.dart' as gd;
 import 'package:mapstyler_style/mapstyler_style.dart';
 
+/// Result of converting a single OGR geometry.
+class ConvertedGeometry {
+  const ConvertedGeometry(this.geometries, {this.warning});
+  final List<Geometry> geometries;
+  final String? warning;
+}
+
 /// Converts a [gd.Geometry] into one or more mapstyler [Geometry] objects.
 ///
 /// Multi-geometries are split into individual geometries.  When
 /// [tolerance] is set, lines are simplified via [simplifyLine] and
 /// polygon rings via [simplifyRing] during coordinate extraction.
 ///
-/// Returns an empty list for unsupported geometry types
-/// (e.g. [gd.GeometryCollection]).
-List<Geometry> convertGeometry(gd.Geometry geometry, {double? tolerance}) =>
-    switch (geometry) {
-      gd.Point(:final x, :final y) => [PointGeometry(x, y)],
-      gd.LineString(:final points) => [
-        LineStringGeometry(_simplifyLineFromPoints(points, tolerance)),
-      ],
-      gd.Polygon(:final rings) => _convertPolygon(rings, tolerance),
-      gd.MultiPoint(:final points) =>
-        points.map((p) => PointGeometry(p.x, p.y)).toList(),
-      gd.MultiLineString(:final lineStrings) => lineStrings
-          .map((ls) =>
-              LineStringGeometry(_simplifyLineFromPoints(ls.points, tolerance)))
-          .toList(),
-      gd.MultiPolygon(:final polygons) => polygons
-          .expand((poly) => _convertPolygon(poly.rings, tolerance))
-          .toList(),
-      _ => <Geometry>[],
-    };
+/// Returns empty geometries plus a [ConvertedGeometry.warning] for
+/// unsupported geometry types (e.g. [gd.GeometryCollection]).
+ConvertedGeometry convertGeometry(gd.Geometry geometry, {double? tolerance}) {
+  final result = switch (geometry) {
+    gd.Point(:final x, :final y) => [PointGeometry(x, y)],
+    gd.LineString(:final points) => [
+      LineStringGeometry(_simplifyLineFromPoints(points, tolerance)),
+    ],
+    gd.Polygon(:final rings) => _convertPolygon(rings, tolerance),
+    gd.MultiPoint(:final points) =>
+      points.map((p) => PointGeometry(p.x, p.y)).toList(),
+    gd.MultiLineString(:final lineStrings) => lineStrings
+        .map((ls) =>
+            LineStringGeometry(_simplifyLineFromPoints(ls.points, tolerance)))
+        .toList(),
+    gd.MultiPolygon(:final polygons) => polygons
+        .expand((poly) => _convertPolygon(poly.rings, tolerance))
+        .toList(),
+    _ => <Geometry>[],
+  };
+  final warning = result.isEmpty
+      ? 'unsupported geometry type ${geometry.runtimeType}, skipped'
+      : null;
+  return ConvertedGeometry(result, warning: warning);
+}
 
 /// Converts polygon rings with ring-specific simplification.
 List<Geometry> _convertPolygon(

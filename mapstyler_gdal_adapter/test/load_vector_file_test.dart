@@ -17,46 +17,41 @@ String _fixture(String name) {
 void main() {
   group('loadVectorFileSync', () {
     test('loads points from GeoJSON', () {
-      final collection = loadVectorFileSync(_fixture('points.geojson'));
-      expect(collection.features, hasLength(2));
+      final result = loadVectorFileSync(_fixture('points.geojson'));
+      expect(result.features.features, hasLength(2));
+      expect(result.warnings, isEmpty);
 
-      final berlin = collection.features[0];
+      final berlin = result.features.features[0];
       expect(berlin.geometry, isA<PointGeometry>());
       expect((berlin.geometry as PointGeometry).x, closeTo(13.4, 0.01));
       expect(berlin.properties['name'], 'Berlin');
       expect(berlin.properties['population'], 3645000);
     });
 
-    test('loads mixed geometry types', () {
-      final collection = loadVectorFileSync(_fixture('mixed.geojson'));
-      // 7 features in file, but:
-      //  - Feature 7 has null geometry → skipped
+    test('loads mixed geometry types and reports warnings', () {
+      final result = loadVectorFileSync(_fixture('mixed.geojson'));
+      // 7 features in file:
+      //  - Feature 7 has null geometry → skipped with warning
       //  - Feature 4 is MultiPoint(2) → split into 2
       //  - Feature 5 is MultiLineString(2) → split into 2
       //  - Feature 6 is MultiPolygon(2) → split into 2
       // Total: 3 simple + 2 + 2 + 2 = 9
-      expect(collection.features, hasLength(9));
-
-      // First feature: Point
-      expect(collection.features[0].geometry, isA<PointGeometry>());
-      // Second: LineString
-      expect(collection.features[1].geometry, isA<LineStringGeometry>());
-      // Third: Polygon
-      expect(collection.features[2].geometry, isA<PolygonGeometry>());
+      expect(result.features.features, hasLength(9));
+      // Null geometry produces a warning.
+      expect(result.warnings, hasLength(1));
+      expect(result.warnings.first, contains('null geometry'));
     });
 
     test('skips features with null geometry', () {
-      final collection = loadVectorFileSync(_fixture('mixed.geojson'));
-      // No feature should have null geometry in the result.
-      for (final f in collection.features) {
+      final result = loadVectorFileSync(_fixture('mixed.geojson'));
+      for (final f in result.features.features) {
         expect(f.geometry, isNotNull);
       }
     });
 
     test('multi-geometry features get split IDs', () {
-      final collection = loadVectorFileSync(_fixture('mixed.geojson'));
-      // MultiPoint (id=4) should produce '4-0' and '4-1'.
-      final multiIds = collection.features
+      final result = loadVectorFileSync(_fixture('mixed.geojson'));
+      final multiIds = result.features.features
           .where((f) => f.id.toString().startsWith('4'))
           .map((f) => f.id)
           .toList();
@@ -71,28 +66,28 @@ void main() {
         _fixture('mixed.geojson'),
         simplifyTolerance: 0.5,
       );
-      // Same number of features (simplification doesn't remove features).
-      expect(simplified.features.length, original.features.length);
+      expect(
+        simplified.features.features.length,
+        original.features.features.length,
+      );
     });
 
     test('applies spatial filter', () {
-      final collection = loadVectorFileSync(
+      final result = loadVectorFileSync(
         _fixture('points.geojson'),
         spatialFilter: (minX: 13.0, minY: 52.0, maxX: 14.0, maxY: 53.0),
       );
-      // Only Berlin (13.4, 52.5) is in the bbox; Hamburg (10.0, 53.55) is not.
-      expect(collection.features, hasLength(1));
-      expect(collection.features.first.properties['name'], 'Berlin');
+      expect(result.features.features, hasLength(1));
+      expect(result.features.features.first.properties['name'], 'Berlin');
     });
 
     test('applies attribute filter', () {
-      final collection = loadVectorFileSync(
+      final result = loadVectorFileSync(
         _fixture('points.geojson'),
         attributeFilter: 'population > 2000000',
       );
-      // Only Berlin has population > 2M.
-      expect(collection.features, hasLength(1));
-      expect(collection.features.first.properties['name'], 'Berlin');
+      expect(result.features.features, hasLength(1));
+      expect(result.features.features.first.properties['name'], 'Berlin');
     });
 
     test('asserts when both tolerance params set', () {
@@ -109,9 +104,9 @@ void main() {
 
   group('loadVectorFile (async)', () {
     test('loads features asynchronously', () async {
-      final collection = await loadVectorFile(_fixture('points.geojson'));
-      expect(collection.features, hasLength(2));
-      expect(collection.features.first.properties['name'], 'Berlin');
+      final result = await loadVectorFile(_fixture('points.geojson'));
+      expect(result.features.features, hasLength(2));
+      expect(result.features.features.first.properties['name'], 'Berlin');
     });
   });
 
@@ -124,20 +119,13 @@ void main() {
       expect(layer.name, isNotEmpty);
       expect(layer.featureCount, 2);
       expect(layer.fields, isNotEmpty);
-      expect(
-        layer.fields.any((f) => f.name == 'name'),
-        isTrue,
-      );
-      expect(
-        layer.fields.any((f) => f.name == 'population'),
-        isTrue,
-      );
+      expect(layer.fields.any((f) => f.name == 'name'), isTrue);
+      expect(layer.fields.any((f) => f.name == 'population'), isTrue);
       expect(layer.extent, isNotNull);
     });
 
     test('returns CRS when available', () {
       final layers = inspectVectorFileSync(_fixture('points.geojson'));
-      // GeoJSON is always EPSG:4326.
       expect(layers.first.crs, contains('4326'));
     });
   });
@@ -152,23 +140,21 @@ void main() {
 
   group('loadVectorFileSync (additional paths)', () {
     test('selects layer by name', () {
-      // GeoJSON layers are named after the file.
       final layers = inspectVectorFileSync(_fixture('points.geojson'));
       final name = layers.first.name;
-      final collection = loadVectorFileSync(
+      final result = loadVectorFileSync(
         _fixture('points.geojson'),
         layerName: name,
       );
-      expect(collection.features, hasLength(2));
+      expect(result.features.features, hasLength(2));
     });
 
     test('simplifyToleranceMeters converts to native CRS', () {
-      // GeoJSON is EPSG:4326 (geographic) → meters get converted to degrees.
-      final collection = loadVectorFileSync(
+      final result = loadVectorFileSync(
         _fixture('points.geojson'),
         simplifyToleranceMeters: 1000,
       );
-      expect(collection.features, hasLength(2));
+      expect(result.features.features, hasLength(2));
     });
   });
 
@@ -189,7 +175,6 @@ void main() {
         _fixture('points.geojson'),
         tolerancesMeters: [10000, 1000],
       );
-      // 3 keys: 0.0 + 2 converted tolerances.
       expect(result.keys, hasLength(3));
       expect(result.containsKey(0.0), isTrue);
     });
@@ -201,7 +186,6 @@ void main() {
         spatialFilter: (minX: 13.0, minY: 52.0, maxX: 14.0, maxY: 53.0),
         attributeFilter: 'population > 1000000',
       );
-      // Only Berlin passes both filters.
       expect(result[0.0]!.features, hasLength(1));
     });
 

@@ -2,6 +2,7 @@ import 'package:gdal_dart/gdal_dart.dart' as gd;
 import 'package:mapstyler_style/mapstyler_style.dart';
 
 import 'geometry_converter.dart';
+import 'load_result.dart';
 import 'vector_layer_info.dart';
 
 /// Loads vector features synchronously.
@@ -9,9 +10,9 @@ import 'vector_layer_info.dart';
 /// Blocks the calling thread.  For Flutter apps prefer the async
 /// variant [loadVectorFile] which runs in a separate isolate.
 ///
-/// **Layer selection**: [layerName] and [layerIndex] are mutually
-/// exclusive.  When [layerName] is set, [layerIndex] is ignored.
-/// When neither is set, layer 0 is used.
+/// **Layer selection**: When [layerName] is set it takes precedence
+/// and [layerIndex] is ignored.  When [layerName] is `null`, the
+/// layer at [layerIndex] is used (default: 0).
 ///
 /// [simplifyTolerance] is in the native CRS unit of the source data
 /// (degrees for EPSG:4326, metres for projected CRS).
@@ -20,7 +21,7 @@ import 'vector_layer_info.dart';
 ///
 /// [spatialFilter] and [attributeFilter] are applied server-side by
 /// OGR so that only matching features cross the FFI boundary.
-StyledFeatureCollection loadVectorFileSync(
+LoadVectorResult loadVectorFileSync(
   String path, {
   int layerIndex = 0,
   String? layerName,
@@ -57,23 +58,36 @@ StyledFeatureCollection loadVectorFileSync(
         _convertMetersToNative(simplifyToleranceMeters, layer);
 
     final features = <StyledFeature>[];
+    final warnings = <String>[];
 
     for (final f in layer.features) {
       final geometry = f.geometry;
-      if (geometry == null) continue;
+      if (geometry == null) {
+        warnings.add('Feature ${f.fid}: null geometry, skipped');
+        continue;
+      }
 
       final converted = convertGeometry(geometry, tolerance: tolerance);
+      if (converted.warning != null) {
+        warnings.add('Feature ${f.fid}: ${converted.warning}');
+        continue;
+      }
 
-      for (final (i, geo) in converted.indexed) {
+      for (final (i, geo) in converted.geometries.indexed) {
         features.add(StyledFeature(
-          id: converted.length == 1 ? '${f.fid}' : '${f.fid}-$i',
+          id: converted.geometries.length == 1
+              ? '${f.fid}'
+              : '${f.fid}-$i',
           geometry: geo,
           properties: f.attributes,
         ));
       }
     }
 
-    return StyledFeatureCollection(features);
+    return LoadVectorResult(
+      features: StyledFeatureCollection(features),
+      warnings: warnings,
+    );
   } finally {
     ds.close();
   }
@@ -140,10 +154,13 @@ Map<double, StyledFeatureCollection> loadVectorFileMultiScaleSync(
       for (final tol in nativeTols) {
         final converted =
             convertGeometry(geometry, tolerance: tol > 0 ? tol : null);
+        if (converted.warning != null) continue;
 
-        for (final (i, geo) in converted.indexed) {
+        for (final (i, geo) in converted.geometries.indexed) {
           buckets[tol]!.add(StyledFeature(
-            id: converted.length == 1 ? '${f.fid}' : '${f.fid}-$i',
+            id: converted.geometries.length == 1
+                ? '${f.fid}'
+                : '${f.fid}-$i',
             geometry: geo,
             properties: f.attributes,
           ));

@@ -12,7 +12,8 @@
 /// ```
 library mapstyler_gdal_adapter;
 
-export 'src/geometry_converter.dart' show convertGeometry;
+export 'src/geometry_converter.dart' show convertGeometry, ConvertedGeometry;
+export 'src/load_result.dart';
 export 'src/load_vector_file.dart';
 export 'src/load_vector_file_sync.dart';
 export 'src/vector_layer_info.dart';

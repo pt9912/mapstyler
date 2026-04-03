@@ -266,9 +266,9 @@ import 'package:mapstyler_gdal_adapter/mapstyler_gdal_adapter.dart';
 /// [path] kann auf jedes von OGR unterstuetzte Vektorformat zeigen
 /// (Shapefile, GeoJSON, GeoPackage, KML, GML, MapInfo, ...).
 ///
-/// [layerName] und [layerIndex] sind exklusiv. Wenn [layerName]
-/// gesetzt ist, wird [layerIndex] ignoriert. Ohne Angabe wird
-/// Layer 0 verwendet.
+/// Wenn [layerName] gesetzt ist, hat es Vorrang und [layerIndex]
+/// wird ignoriert. Ohne [layerName] wird der Layer an Position
+/// [layerIndex] verwendet (Standard: 0).
 ///
 /// [simplifyTolerance] aktiviert die zweistufige Geometrie-
 /// Vereinfachung (radiale Vorfilterung + Douglas-Peucker) waehrend
@@ -638,13 +638,14 @@ Ziel fuer die erste Version:
 
 Loesung:
 - Metadaten-API getrennt vom Feature-Laden halten
-- `name`, `featureCount`, `fields` und `extent` direkt aus dem OGR-Layer
-  lesen, ohne Features komplett zu konvertieren
+- `name`, `featureCount`, `fields`, `extent`, `geometryType` und `crs`
+  direkt aus dem OGR-Layer lesen, ohne Features komplett zu konvertieren
 - Async-Variante analog zu `loadVectorFile()` im Isolate ausfuehren
 - Sync-Variante fuer CLI und Tests direkt bereitstellen
 
 Ziel fuer die erste Version:
 - Datei- und Layerauswahl ohne Vollimport
+- CRS-Information fuer Toleranz-Umrechnung verfuegbar
 - dieselbe Nutzbarkeit in Flutter und in reinen Dart-Umgebungen
 
 **Tests**

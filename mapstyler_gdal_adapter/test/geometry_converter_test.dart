@@ -33,9 +33,9 @@ void main() {
 
   group('convertGeometry', () {
     test('converts Point', () {
-      final result = convertGeometry(const gd.Point(13.4, 52.5));
-      expect(result, hasLength(1));
-      final p = result.first as PointGeometry;
+      final converted = convertGeometry(const gd.Point(13.4, 52.5));
+      expect(converted.geometries, hasLength(1));
+      final p = converted.geometries.first as PointGeometry;
       expect(p.x, 13.4);
       expect(p.y, 52.5);
     });
@@ -46,9 +46,9 @@ void main() {
         gd.Point(1, 1),
         gd.Point(2, 0),
       ]);
-      final result = convertGeometry(geom);
-      expect(result, hasLength(1));
-      final ls = result.first as LineStringGeometry;
+      final converted = convertGeometry(geom);
+      expect(converted.geometries, hasLength(1));
+      final ls = converted.geometries.first as LineStringGeometry;
       expect(ls.coordinates, [(0.0, 0.0), (1.0, 1.0), (2.0, 0.0)]);
     });
 
@@ -60,21 +60,21 @@ void main() {
         gd.Point(0, 0),
       ]);
       const geom = gd.Polygon([ring]);
-      final result = convertGeometry(geom);
-      expect(result, hasLength(1));
-      final poly = result.first as PolygonGeometry;
+      final converted = convertGeometry(geom);
+      expect(converted.geometries, hasLength(1));
+      final poly = converted.geometries.first as PolygonGeometry;
       expect(poly.rings, hasLength(1));
       expect(poly.rings.first, hasLength(4));
     });
 
     test('splits MultiPoint into individual features', () {
       const geom = gd.MultiPoint([gd.Point(1, 2), gd.Point(3, 4)]);
-      final result = convertGeometry(geom);
-      expect(result, hasLength(2));
-      expect(result[0], isA<PointGeometry>());
-      expect(result[1], isA<PointGeometry>());
-      expect((result[0] as PointGeometry).x, 1);
-      expect((result[1] as PointGeometry).x, 3);
+      final converted = convertGeometry(geom);
+      expect(converted.geometries, hasLength(2));
+      expect(converted.geometries[0], isA<PointGeometry>());
+      expect(converted.geometries[1], isA<PointGeometry>());
+      expect((converted.geometries[0] as PointGeometry).x, 1);
+      expect((converted.geometries[1] as PointGeometry).x, 3);
     });
 
     test('splits MultiLineString', () {
@@ -82,10 +82,10 @@ void main() {
         gd.LineString([gd.Point(0, 0), gd.Point(1, 1)]),
         gd.LineString([gd.Point(2, 2), gd.Point(3, 3)]),
       ]);
-      final result = convertGeometry(geom);
-      expect(result, hasLength(2));
-      expect(result[0], isA<LineStringGeometry>());
-      expect(result[1], isA<LineStringGeometry>());
+      final converted = convertGeometry(geom);
+      expect(converted.geometries, hasLength(2));
+      expect(converted.geometries[0], isA<LineStringGeometry>());
+      expect(converted.geometries[1], isA<LineStringGeometry>());
     });
 
     test('splits MultiPolygon', () {
@@ -99,16 +99,23 @@ void main() {
               [gd.Point(5, 5), gd.Point(6, 5), gd.Point(6, 6), gd.Point(5, 5)])
         ]),
       ]);
-      final result = convertGeometry(geom);
-      expect(result, hasLength(2));
-      expect(result[0], isA<PolygonGeometry>());
-      expect(result[1], isA<PolygonGeometry>());
+      final converted = convertGeometry(geom);
+      expect(converted.geometries, hasLength(2));
+      expect(converted.geometries[0], isA<PolygonGeometry>());
+      expect(converted.geometries[1], isA<PolygonGeometry>());
     });
 
-    test('returns empty list for GeometryCollection', () {
+    test('returns empty list and warning for GeometryCollection', () {
       const geom = gd.GeometryCollection([gd.Point(0, 0)]);
-      final result = convertGeometry(geom);
-      expect(result, isEmpty);
+      final converted = convertGeometry(geom);
+      expect(converted.geometries, isEmpty);
+      expect(converted.warning, isNotNull);
+      expect(converted.warning, contains('unsupported geometry type'));
+    });
+
+    test('no warning for supported geometry types', () {
+      final converted = convertGeometry(const gd.Point(0, 0));
+      expect(converted.warning, isNull);
     });
 
     test('simplifies LineString with tolerance', () {
@@ -116,10 +123,10 @@ void main() {
       final geom = gd.LineString([
         for (var i = 0; i < 20; i++) gd.Point(i.toDouble(), 0),
       ]);
-      final original = convertGeometry(geom);
-      final simplified = convertGeometry(geom, tolerance: 0.1);
-      final origLine = original.first as LineStringGeometry;
-      final simpLine = simplified.first as LineStringGeometry;
+      final originalC = convertGeometry(geom);
+      final simplifiedC = convertGeometry(geom, tolerance: 0.1);
+      final origLine = originalC.geometries.first as LineStringGeometry;
+      final simpLine = simplifiedC.geometries.first as LineStringGeometry;
       expect(simpLine.coordinates.length, lessThan(origLine.coordinates.length));
       expect(simpLine.coordinates.first, origLine.coordinates.first);
       expect(simpLine.coordinates.last, origLine.coordinates.last);
@@ -135,10 +142,10 @@ void main() {
       ringPoints.add(const gd.Point(0, 0)); // close
 
       final geom = gd.Polygon([gd.LineString(ringPoints)]);
-      final original = convertGeometry(geom);
-      final simplified = convertGeometry(geom, tolerance: 0.1);
-      final origPoly = original.first as PolygonGeometry;
-      final simpPoly = simplified.first as PolygonGeometry;
+      final originalC = convertGeometry(geom);
+      final simplifiedC = convertGeometry(geom, tolerance: 0.1);
+      final origPoly = originalC.geometries.first as PolygonGeometry;
+      final simpPoly = simplifiedC.geometries.first as PolygonGeometry;
       expect(
         simpPoly.rings.first.length,
         lessThan(origPoly.rings.first.length),
@@ -150,12 +157,12 @@ void main() {
       final geom = gd.LineString([
         for (var i = 0; i < 10; i++) gd.Point(i.toDouble(), 0),
       ]);
-      final noTol = convertGeometry(geom);
-      final zeroTol = convertGeometry(geom, tolerance: 0);
-      final negTol = convertGeometry(geom, tolerance: -1);
-      expect((noTol.first as LineStringGeometry).coordinates.length, 10);
-      expect((zeroTol.first as LineStringGeometry).coordinates.length, 10);
-      expect((negTol.first as LineStringGeometry).coordinates.length, 10);
+      final noTolC = convertGeometry(geom);
+      final zeroTolC = convertGeometry(geom, tolerance: 0);
+      final negTolC = convertGeometry(geom, tolerance: -1);
+      expect((noTolC.geometries.first as LineStringGeometry).coordinates.length, 10);
+      expect((zeroTolC.geometries.first as LineStringGeometry).coordinates.length, 10);
+      expect((negTolC.geometries.first as LineStringGeometry).coordinates.length, 10);
     });
 
     test('Polygon with interior ring survives simplification', () {
@@ -178,9 +185,9 @@ void main() {
       ]);
       const geom = gd.Polygon([exterior, interior]);
 
-      final result = convertGeometry(geom, tolerance: 1.0);
-      expect(result, hasLength(1));
-      final poly = result.first as PolygonGeometry;
+      final converted = convertGeometry(geom, tolerance: 1.0);
+      expect(converted.geometries, hasLength(1));
+      final poly = converted.geometries.first as PolygonGeometry;
       expect(poly.rings, hasLength(2));
       // Both rings remain closed.
       expect(poly.rings[0].first, poly.rings[0].last);
