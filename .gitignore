@@ -16,3 +16,5 @@ pubspec.lock
 
 # Coverage
 coverage/
+
+.internal/
