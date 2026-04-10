@@ -1,6 +1,6 @@
 name: mapstyler_gdal_adapter
 description: GDAL/OGR-based geodata adapter — loads vector features from Shapefiles, GeoJSON, GeoPackage and 100+ other formats into StyledFeatureCollection.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/pt9912/mapstyler
 resolution: workspace
 

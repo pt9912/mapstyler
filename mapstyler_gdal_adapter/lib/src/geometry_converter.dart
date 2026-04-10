@@ -3,8 +3,16 @@ import 'package:mapstyler_style/mapstyler_style.dart';
 
 /// Result of converting a single OGR geometry.
 class ConvertedGeometry {
+  /// Creates a converted geometry result.
   const ConvertedGeometry(this.geometries, {this.warning});
+
+  /// Converted mapstyler geometries.
+  ///
+  /// Multi-geometries are represented as multiple entries.
   final List<Geometry> geometries;
+
+  /// Non-fatal conversion warning, if the source geometry could not be
+  /// represented exactly.
   final String? warning;
 }
 
@@ -25,24 +33,29 @@ ConvertedGeometry convertGeometry(gd.Geometry geometry, {double? tolerance}) {
     gd.Polygon(:final rings) => _convertPolygon(rings, tolerance),
     gd.MultiPoint(:final points) =>
       points.map((p) => PointGeometry(p.x, p.y)).toList(),
-    gd.MultiLineString(:final lineStrings) => lineStrings
-        .map((ls) =>
-            LineStringGeometry(_simplifyLineFromPoints(ls.points, tolerance)))
-        .toList(),
-    gd.MultiPolygon(:final polygons) => polygons
-        .expand((poly) => _convertPolygon(poly.rings, tolerance))
-        .toList(),
+    gd.MultiLineString(:final lineStrings) =>
+      lineStrings
+          .map(
+            (ls) => LineStringGeometry(
+              _simplifyLineFromPoints(ls.points, tolerance),
+            ),
+          )
+          .toList(),
+    gd.MultiPolygon(:final polygons) =>
+      polygons
+          .expand((poly) => _convertPolygon(poly.rings, tolerance))
+          .toList(),
     _ => <Geometry>[],
   };
-  final warning = result.isEmpty
-      ? 'unsupported geometry type ${geometry.runtimeType}, skipped'
-      : null;
+  final warning =
+      result.isEmpty
+          ? 'unsupported geometry type ${geometry.runtimeType}, skipped'
+          : null;
   return ConvertedGeometry(result, warning: warning);
 }
 
 /// Converts polygon rings with ring-specific simplification.
-List<Geometry> _convertPolygon(
-    List<gd.LineString> rings, double? tolerance) {
+List<Geometry> _convertPolygon(List<gd.LineString> rings, double? tolerance) {
   if (rings.isEmpty) return [];
   final simplified = <List<(double, double)>>[];
 
@@ -54,9 +67,7 @@ List<Geometry> _convertPolygon(
       // Exterior ring too small → return unsimplified polygon.
       return [
         PolygonGeometry(
-          rings
-              .map((r) => r.points.map((p) => (p.x, p.y)).toList())
-              .toList(),
+          rings.map((r) => r.points.map((p) => (p.x, p.y)).toList()).toList(),
         ),
       ];
     }

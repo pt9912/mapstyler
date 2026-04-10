@@ -1,5 +1,6 @@
 /// Converts between ARGB integers (flutter_map_sld) and hex color strings
 /// (mapstyler_style / GeoStyler).
+library;
 
 /// Converts an ARGB integer to a `#rrggbb` hex string.
 ///

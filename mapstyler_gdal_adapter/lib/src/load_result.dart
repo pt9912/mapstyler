@@ -5,10 +5,8 @@ import 'package:mapstyler_style/mapstyler_style.dart';
 /// Contains the loaded [features] and any [warnings] about data that
 /// could not be fully converted (e.g. unsupported geometry types).
 class LoadVectorResult {
-  const LoadVectorResult({
-    required this.features,
-    this.warnings = const [],
-  });
+  /// Creates a vector load result.
+  const LoadVectorResult({required this.features, this.warnings = const []});
 
   /// The loaded and optionally simplified features.
   final StyledFeatureCollection features;
@@ -26,6 +24,7 @@ class LoadVectorResult {
 /// Contains one [StyledFeatureCollection] per tolerance level plus
 /// any [warnings] about data that could not be fully converted.
 class LoadVectorMultiScaleResult {
+  /// Creates a multi-scale vector load result.
   const LoadVectorMultiScaleResult({
     required this.levels,
     this.warnings = const [],

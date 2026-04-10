@@ -67,6 +67,18 @@ void main() {
       expect(poly.rings.first, hasLength(4));
     });
 
+    test('keeps degenerate exterior rings unsimplified', () {
+      const ring = gd.LineString([gd.Point(0, 0), gd.Point(1, 1)]);
+      const geom = gd.Polygon([ring]);
+      final converted = convertGeometry(geom);
+
+      expect(converted.geometries, hasLength(1));
+      final poly = converted.geometries.first as PolygonGeometry;
+      expect(poly.rings, [
+        [(0.0, 0.0), (1.0, 1.0)],
+      ]);
+    });
+
     test('splits MultiPoint into individual features', () {
       const geom = gd.MultiPoint([gd.Point(1, 2), gd.Point(3, 4)]);
       final converted = convertGeometry(geom);
@@ -91,12 +103,20 @@ void main() {
     test('splits MultiPolygon', () {
       const geom = gd.MultiPolygon([
         gd.Polygon([
-          gd.LineString(
-              [gd.Point(0, 0), gd.Point(1, 0), gd.Point(1, 1), gd.Point(0, 0)])
+          gd.LineString([
+            gd.Point(0, 0),
+            gd.Point(1, 0),
+            gd.Point(1, 1),
+            gd.Point(0, 0),
+          ]),
         ]),
         gd.Polygon([
-          gd.LineString(
-              [gd.Point(5, 5), gd.Point(6, 5), gd.Point(6, 6), gd.Point(5, 5)])
+          gd.LineString([
+            gd.Point(5, 5),
+            gd.Point(6, 5),
+            gd.Point(6, 6),
+            gd.Point(5, 5),
+          ]),
         ]),
       ]);
       final converted = convertGeometry(geom);
@@ -127,7 +147,10 @@ void main() {
       final simplifiedC = convertGeometry(geom, tolerance: 0.1);
       final origLine = originalC.geometries.first as LineStringGeometry;
       final simpLine = simplifiedC.geometries.first as LineStringGeometry;
-      expect(simpLine.coordinates.length, lessThan(origLine.coordinates.length));
+      expect(
+        simpLine.coordinates.length,
+        lessThan(origLine.coordinates.length),
+      );
       expect(simpLine.coordinates.first, origLine.coordinates.first);
       expect(simpLine.coordinates.last, origLine.coordinates.last);
     });
@@ -160,9 +183,18 @@ void main() {
       final noTolC = convertGeometry(geom);
       final zeroTolC = convertGeometry(geom, tolerance: 0);
       final negTolC = convertGeometry(geom, tolerance: -1);
-      expect((noTolC.geometries.first as LineStringGeometry).coordinates.length, 10);
-      expect((zeroTolC.geometries.first as LineStringGeometry).coordinates.length, 10);
-      expect((negTolC.geometries.first as LineStringGeometry).coordinates.length, 10);
+      expect(
+        (noTolC.geometries.first as LineStringGeometry).coordinates.length,
+        10,
+      );
+      expect(
+        (zeroTolC.geometries.first as LineStringGeometry).coordinates.length,
+        10,
+      );
+      expect(
+        (negTolC.geometries.first as LineStringGeometry).coordinates.length,
+        10,
+      );
     });
 
     test('Polygon with interior ring survives simplification', () {

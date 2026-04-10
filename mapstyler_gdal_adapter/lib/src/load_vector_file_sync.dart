@@ -38,9 +38,8 @@ LoadVectorResult loadVectorFileSync(
   final gdal = gd.Gdal();
   final ds = gdal.openVector(path);
   try {
-    final layer = layerName != null
-        ? ds.layerByName(layerName)
-        : ds.layer(layerIndex);
+    final layer =
+        layerName != null ? ds.layerByName(layerName) : ds.layer(layerIndex);
 
     if (spatialFilter != null) {
       layer.setSpatialFilterRect(
@@ -54,7 +53,8 @@ LoadVectorResult loadVectorFileSync(
       layer.setAttributeFilter(attributeFilter);
     }
 
-    final tolerance = simplifyTolerance ??
+    final tolerance =
+        simplifyTolerance ??
         _convertMetersToNative(simplifyToleranceMeters, layer);
 
     final features = <StyledFeature>[];
@@ -74,13 +74,13 @@ LoadVectorResult loadVectorFileSync(
       }
 
       for (final (i, geo) in converted.geometries.indexed) {
-        features.add(StyledFeature(
-          id: converted.geometries.length == 1
-              ? '${f.fid}'
-              : '${f.fid}-$i',
-          geometry: geo,
-          properties: f.attributes,
-        ));
+        features.add(
+          StyledFeature(
+            id: converted.geometries.length == 1 ? '${f.fid}' : '${f.fid}-$i',
+            geometry: geo,
+            properties: f.attributes,
+          ),
+        );
       }
     }
 
@@ -115,9 +115,8 @@ LoadVectorMultiScaleResult loadVectorFileMultiScaleSync(
   final gdal = gd.Gdal();
   final ds = gdal.openVector(path);
   try {
-    final layer = layerName != null
-        ? ds.layerByName(layerName)
-        : ds.layer(layerIndex);
+    final layer =
+        layerName != null ? ds.layerByName(layerName) : ds.layer(layerIndex);
 
     if (spatialFilter != null) {
       layer.setSpatialFilterRect(
@@ -163,17 +162,19 @@ LoadVectorMultiScaleResult loadVectorFileMultiScaleSync(
       }
 
       for (final tol in nativeTols) {
-        final converted =
-            convertGeometry(geometry, tolerance: tol > 0 ? tol : null);
+        final converted = convertGeometry(
+          geometry,
+          tolerance: tol > 0 ? tol : null,
+        );
 
         for (final (i, geo) in converted.geometries.indexed) {
-          buckets[tol]!.add(StyledFeature(
-            id: converted.geometries.length == 1
-                ? '${f.fid}'
-                : '${f.fid}-$i',
-            geometry: geo,
-            properties: f.attributes,
-          ));
+          buckets[tol]!.add(
+            StyledFeature(
+              id: converted.geometries.length == 1 ? '${f.fid}' : '${f.fid}-$i',
+              geometry: geo,
+              properties: f.attributes,
+            ),
+          );
         }
       }
     }
@@ -208,9 +209,10 @@ List<VectorLayerInfo> inspectVectorFileSync(String path) {
       return VectorLayerInfo(
         name: layer.name,
         featureCount: layer.featureCount,
-        fields: layer.fieldDefinitions
-            .map((f) => (name: f.name, type: f.type.name))
-            .toList(),
+        fields:
+            layer.fieldDefinitions
+                .map((f) => (name: f.name, type: f.type.name))
+                .toList(),
         extent: layer.extent,
         geometryType: layer.geometryType?.name,
         crs: crs,
@@ -232,8 +234,8 @@ double? _convertMetersToNative(double? meters, gd.OgrLayer layer) {
   if (srs == null) return meters; // unknown CRS → assume metres
 
   try {
-    final isGeographic = srs.authorityName == 'EPSG' &&
-        srs.authorityCode == '4326';
+    final isGeographic =
+        srs.authorityName == 'EPSG' && srs.authorityCode == '4326';
 
     if (!isGeographic) return meters; // already in metres (projected)
 
@@ -258,9 +260,17 @@ double _cos(double radians) {
 /// typical latitudes).
 double _taylorCos(double x) {
   // Normalize to [-pi, pi].
-  while (x > 3.141592653589793) x -= 2 * 3.141592653589793;
-  while (x < -3.141592653589793) x += 2 * 3.141592653589793;
+  while (x > 3.141592653589793) {
+    x -= 2 * 3.141592653589793;
+  }
+  while (x < -3.141592653589793) {
+    x += 2 * 3.141592653589793;
+  }
   final x2 = x * x;
   // Taylor series: 1 - x²/2! + x⁴/4! - x⁶/6! + x⁸/8!
-  return 1 - x2 / 2 + x2 * x2 / 24 - x2 * x2 * x2 / 720 + x2 * x2 * x2 * x2 / 40320;
+  return 1 -
+      x2 / 2 +
+      x2 * x2 / 24 -
+      x2 * x2 * x2 / 720 +
+      x2 * x2 * x2 * x2 / 40320;
 }

@@ -1,3 +1,9 @@
+## 0.1.1
+
+- Added missing public API documentation.
+- Added a package example.
+- Fixed lints reported by pub.dev static analysis.
+
 ## 0.1.0
 
 - Initial release.
