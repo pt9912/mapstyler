@@ -143,6 +143,7 @@ nutzbar ist.
 
 Umgesetzt:
 
+- `0.1.0` auf pub.dev veroeffentlicht.
 - Objektmodell fuer `QmlDocument`, `QmlRenderer`, `QmlSymbol`,
   `QmlSymbolLayer`, `QmlRule`, `QmlCategory` und `QmlRange`.
 - `Qml4DartCodec` mit `parseString`, `parseFile`, `encodeString` und
@@ -162,8 +163,6 @@ Umgesetzt:
 
 Geplante Punkte:
 
-- Publish-Freigabe vorbereiten (`publish_to: none` entfernen), sobald
-  die API fuer `0.1.0` final freigegeben ist.
 - Weitere QGIS-Symbol-Layer und Renderer-Sonderfaelle schrittweise
   abdecken.
 - Parser-Warnings fuer nicht unterstuetzte QML-Details weiter

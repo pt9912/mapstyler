@@ -9,9 +9,12 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 | Package                                               | Beschreibung                                                      | Status      |
 | ----------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
 | [`mapstyler_style`](mapstyler_style/)                 | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | 🚧 In Arbeit |
-| [`mapbox4dart`](mapbox4dart/)                         | Pure-Dart-Codec und Objektmodell für Mapbox GL Style JSON         | geplant     |
-| [`mapstyler_mapbox_adapter`](mapstyler_mapbox_adapter/) | Mapbox GL Style JSON ↔ mapstyler                                  | geplant     |
-| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | geplant     |
+| [`mapbox4dart`](mapbox4dart/)                         | Pure-Dart-Codec und Objektmodell für Mapbox GL Style JSON         | [0.1.0 veröffentlicht](https://pub.dev/packages/mapbox4dart) |
+| [`mapstyler_mapbox_adapter`](mapstyler_mapbox_adapter/) | Mapbox GL Style JSON ↔ mapstyler                                  | 🚧 In Arbeit |
+| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | 🚧 In Arbeit |
+| [`qml4dart`](qml4dart/)                               | Pure-Dart-Codec und Objektmodell für QGIS-QML-Layer-Styles        | [0.1.0 veröffentlicht](https://pub.dev/packages/qml4dart) |
+| [`mapstyler_qml_adapter`](mapstyler_qml_adapter/)     | QGIS-QML ↔ mapstyler                                              | 🚧 In Arbeit |
+| [`mapstyler_gdal_adapter`](mapstyler_gdal_adapter/)   | Flutter-freies Laden von Vektordaten in StyledFeatureCollections  | 🚧 In Arbeit |
 | [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | geplant     |
 
 ## Architektur
@@ -19,6 +22,7 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 ```
 SLD XML ──→ flutter_map_sld ──→ mapstyler_sld_adapter ──┐
 Mapbox JSON ──→ mapbox4dart ──→ mapstyler_mapbox_adapter ─┤
+QGIS QML ──→ qml4dart ──→ mapstyler_qml_adapter ──────────┤
                                                          ▼
                                                   mapstyler_style
                                                  (pure Dart Typen)

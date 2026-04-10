@@ -91,3 +91,8 @@ docker run --rm -it --net=host qml4dart:publish sh -c 'dart pub publish'
 Der interaktive Modus (`-it`) ist nötig, damit die Authentifizierung über
 den Browser abgeschlossen werden kann. `--net=host` ermöglicht den
 Callback vom pub.dev OAuth-Flow.
+
+Nach dem manuellen Erst-Publish sollte der annotierte Release-Tag trotzdem
+gesetzt und gepusht werden. Der dadurch gestartete Publish-Workflow kann
+fehlschlagen, wenn dieselbe Version bereits manuell auf pub.dev hochgeladen
+wurde; in diesem Fall ist der manuelle Upload die maßgebliche Release-Quelle.

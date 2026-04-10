@@ -7,7 +7,7 @@ Liest, modelliert und schreibt QML — ohne Flutter-Abhängigkeit und ohne QGIS-
 ## Features
 
 - **Renderer:** singleSymbol, categorizedSymbol, graduatedSymbol, RuleRenderer (inkl. verschachtelte Regeln)
-- **Symbol-Layer:** SimpleMarker, SimpleLine, SimpleFill, SvgMarker
+- **Symbol-Layer:** SimpleMarker, SimpleLine, SimpleFill, SvgMarker, RasterFill
 - **Geometrietypen:** Punkt (marker), Linie (line), Polygon (fill)
 - **Properties:** Farbe, Opacity, Linienbreite, Dash Pattern, Join/Cap, Marker-Größe, Outline, Rotation
 - **Beide QML-Formate:** altes `<prop k v>`-Format und neues `<Option type="Map">`-Format (QGIS >= 3.26)
