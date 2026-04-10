@@ -16,10 +16,10 @@ dependencies:
   latlong2: ^0.9.1
   mapbox4dart: ^0.1.0
   mapstyler_mapbox_adapter: ^0.1.0
-  mapstyler_qml_adapter: ^0.1.0
+  mapstyler_qml_adapter: ^0.2.0
   mapstyler_sld_adapter: ^0.1.0
-  mapstyler_style: ^0.1.0
-  qml4dart: ^0.1.0
+  mapstyler_style: ^0.1.1
+  qml4dart: ^0.1.1
 
 dev_dependencies:
   flutter_test:

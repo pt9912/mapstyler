@@ -24,8 +24,7 @@ The package deliberately does not parse GeoJSON itself. Input data is expected a
 
 ```yaml
 dependencies:
-  flutter_mapstyler:
-    path: ../flutter_mapstyler
+  flutter_mapstyler: ^0.1.0
 ```
 
 ## Core Types
