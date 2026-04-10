@@ -177,4 +177,7 @@ docker build --target style-coverage-check --no-cache-filter style-coverage --pr
 
 ## Lizenz
 
-MIT — siehe [LICENSE](LICENSE).
+Die Packages sind einzeln lizenziert:
+
+- `mapstyler_style`: BSD-2-Clause — siehe [mapstyler_style/LICENSE](mapstyler_style/LICENSE)
+- alle anderen Packages: MIT — siehe die jeweilige `LICENSE` im Package-Verzeichnis

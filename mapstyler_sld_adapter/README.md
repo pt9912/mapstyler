@@ -42,4 +42,4 @@ hexToArgb('#ff0000', opacity: 0.5);    // → 0x80FF0000
 
 ## License
 
-BSD-2-Clause — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).

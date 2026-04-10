@@ -44,4 +44,4 @@ if (result case WriteStyleSuccess(:final output)) {
 
 ## License
 
-BSD-2-Clause — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
