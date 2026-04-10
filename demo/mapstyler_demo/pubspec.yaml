@@ -11,8 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   dio: ^5.0.0
-  flutter_map: ^7.0.0
-  flutter_mapstyler: ^0.1.0
+  flutter_map: ^8.0.0
+  flutter_mapstyler: ^0.1.1
   latlong2: ^0.9.1
   mapbox4dart: ^0.1.0
   mapstyler_mapbox_adapter: ^0.1.0

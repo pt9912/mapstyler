@@ -15,7 +15,7 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 | [`qml4dart`](qml4dart/)                               | Pure-Dart-Codec und Objektmodell für QGIS-QML-Layer-Styles        | [0.1.1 veröffentlicht](https://pub.dev/packages/qml4dart) |
 | [`mapstyler_qml_adapter`](mapstyler_qml_adapter/)     | QGIS-QML ↔ mapstyler                                              | [0.2.0 veröffentlicht](https://pub.dev/packages/mapstyler_qml_adapter) |
 | [`mapstyler_gdal_adapter`](mapstyler_gdal_adapter/)   | Flutter-freies Laden von Vektordaten in StyledFeatureCollections  | [0.1.1 veröffentlicht](https://pub.dev/packages/mapstyler_gdal_adapter) |
-| [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | [0.1.0 veröffentlicht](https://pub.dev/packages/flutter_mapstyler) |
+| [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | [0.1.1 veröffentlicht](https://pub.dev/packages/flutter_mapstyler) |
 
 ## Architektur
 

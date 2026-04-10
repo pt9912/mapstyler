@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Updated the `flutter_map` dependency constraint to 8.x.
+
 ## 0.1.0
 
 - initial `flutter_mapstyler` package setup

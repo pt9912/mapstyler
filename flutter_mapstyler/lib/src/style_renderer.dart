@@ -942,9 +942,7 @@ class _GeometryLayerInteractionBridgeState
 
     // Polygon hit testing can use geographic containment directly. Lines need
     // a pixel-space tolerance to remain tappable across zoom levels.
-    final coordinate = mapState.pointToLatLng(
-      math.Point<double>(localPosition.dx, localPosition.dy),
-    );
+    final coordinate = mapState.offsetToCrs(localPosition);
     final point = PointGeometry(coordinate.longitude, coordinate.latitude);
     for (final feature in widget.features.reversed) {
       final geometry = widget.geometrySelector(feature);

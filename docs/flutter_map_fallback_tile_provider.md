@@ -256,7 +256,7 @@ dependencies:
   flutter:
     sdk: flutter
   dio: ^5.0.0
-  flutter_map: ^7.0.0
+  flutter_map: ^8.0.0
 
 dev_dependencies:
   flutter_test:
