@@ -11,11 +11,11 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 | [`mapstyler_style`](mapstyler_style/)                 | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | [0.1.1 veröffentlicht](https://pub.dev/packages/mapstyler_style) |
 | [`mapbox4dart`](mapbox4dart/)                         | Pure-Dart-Codec und Objektmodell für Mapbox GL Style JSON         | [0.1.0 veröffentlicht](https://pub.dev/packages/mapbox4dart) |
 | [`mapstyler_mapbox_adapter`](mapstyler_mapbox_adapter/) | Mapbox GL Style JSON ↔ mapstyler                                  | [0.1.0 veröffentlicht](https://pub.dev/packages/mapstyler_mapbox_adapter) |
-| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | [0.1.0 veröffentlicht](https://pub.dev/packages/mapstyler_sld_adapter) |
+| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | [0.1.2 veröffentlicht](https://pub.dev/packages/mapstyler_sld_adapter) |
 | [`qml4dart`](qml4dart/)                               | Pure-Dart-Codec und Objektmodell für QGIS-QML-Layer-Styles        | [0.1.1 veröffentlicht](https://pub.dev/packages/qml4dart) |
 | [`mapstyler_qml_adapter`](mapstyler_qml_adapter/)     | QGIS-QML ↔ mapstyler                                              | [0.2.0 veröffentlicht](https://pub.dev/packages/mapstyler_qml_adapter) |
-| [`mapstyler_gdal_adapter`](mapstyler_gdal_adapter/)   | Flutter-freies Laden von Vektordaten in StyledFeatureCollections  | [0.1.0 veröffentlicht](https://pub.dev/packages/mapstyler_gdal_adapter) |
-| [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | geplant     |
+| [`mapstyler_gdal_adapter`](mapstyler_gdal_adapter/)   | Flutter-freies Laden von Vektordaten in StyledFeatureCollections  | [0.1.1 veröffentlicht](https://pub.dev/packages/mapstyler_gdal_adapter) |
+| [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | [0.1.0 veröffentlicht](https://pub.dev/packages/flutter_mapstyler) |
 
 ## Architektur
 
