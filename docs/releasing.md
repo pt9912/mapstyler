@@ -66,7 +66,7 @@ Für andere Packages analog mit dem jeweiligen Präfix und Docker-Target.
 | mapstyler_mapbox_adapter | `mapbox-analyze` | `mapbox-test` | `mapbox-coverage-check` | `mapbox-publish-check` |
 | mapstyler_sld_adapter | `sld-analyze` | `sld-test` | `sld-coverage-check` | `sld-publish-check` |
 | qml4dart | `qml-analyze` | `qml-test` | `qml-coverage-check` | `qml-publish-check` |
-| mapstyler_qml_adapter | `qml-adapter-analyze` | `qml-adapter-test` | — | `qml-adapter-publish-check` |
+| mapstyler_qml_adapter | `qml-adapter-analyze` | `qml-adapter-test` | `qml-adapter-coverage-check` | `qml-adapter-publish-check` |
 | mapstyler_gdal_adapter | `gdal-analyze` | `gdal-test` | `gdal-coverage-check` | `gdal-publish-check` |
 | flutter_mapstyler | `flutter-analyze` | `flutter-test` | `flutter-coverage-check` | `flutter-publish-check` |
 
@@ -74,6 +74,10 @@ Für andere Packages analog mit dem jeweiligen Präfix und Docker-Target.
 
 Jedes Package hat einen eigenen Publish-Workflow unter `.github/workflows/publish-*.yml`.
 Der Workflow wird nur für Tags im jeweiligen Schema gestartet.
+
+GitHub Actions erzeugt keine `push`-Events, wenn mehr als drei Tags auf einmal
+gepusht werden. Release-Tags deshalb einzeln oder maximal drei Tags pro Push
+veröffentlichen, sonst starten die Publish-Workflows nicht.
 
 Der eigentliche Upload läuft über den offiziellen
 `dart-lang/setup-dart`-Publish-Workflow und das GitHub-Environment `pub.dev`.
