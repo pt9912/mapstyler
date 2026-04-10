@@ -1,14 +1,9 @@
-/// Geometry simplification for coordinate lists.
-///
-/// Provides [simplifyLine] for open polylines and [simplifyRing] for
-/// closed polygon rings.  Both use a two-stage approach:
-///
-/// 1. **Radial pre-filter** — removes points closer than [tolerance]
-///    to the previous kept point.  O(n), single pass.
-/// 2. **Douglas-Peucker** — recursive shape-preserving simplification.
-///    O(n log n) average case.
-///
-/// All distance comparisons use squared values to avoid `sqrt` calls.
+// Geometry simplification for coordinate lists.
+//
+// Provides simplifyLine for open polylines and simplifyRing for closed polygon
+// rings. Both use a two-stage approach: radial pre-filtering followed by
+// Douglas-Peucker simplification. All distance comparisons use squared values
+// to avoid sqrt calls.
 
 /// Simplifies an open polyline.
 ///
