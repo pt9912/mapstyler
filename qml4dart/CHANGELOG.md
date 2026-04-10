@@ -1,3 +1,7 @@
+## 0.1.1
+
+- Fix pub.dev analyzer warning for the QML document DartDoc comment.
+
 ## 0.1.0
 
 - Objektmodell: QmlDocument, QmlRenderer, QmlSymbol, QmlSymbolLayer, QmlRule, QmlCategory, QmlRange

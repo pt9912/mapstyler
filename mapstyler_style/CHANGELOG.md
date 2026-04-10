@@ -1,3 +1,7 @@
+## 0.1.1
+
+- Fix pub.dev analyzer warning for the geometry simplification file comment.
+
 ## 0.1.0
 
 - Initial release.
