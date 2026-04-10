@@ -13,6 +13,8 @@ formatunabhaengige Kartenstile werden:
 - `mapstyler_style` als stabiles Kernmodell
 - `mapbox4dart` als Pure-Dart-Codec und Objektmodell fuer Mapbox GL
   Style JSON
+- `qml4dart` als Pure-Dart-Codec und Objektmodell fuer QGIS-QML-
+  Layer-Style-Dateien
 - Adapter fuer SLD, QML und Mapbox
 - `flutter_mapstyler` fuer das Rendering in Flutter
 - datenorientierte Adapter wie `mapstyler_gdal_adapter` fuer
@@ -133,23 +135,107 @@ Geplante Punkte:
 - Validierung fuer haeufige Style-Fehler ausbauen.
 - Roundtrip-Tests mit groesseren realen Style-Beispielen ergaenzen.
 
+### `qml4dart`
+
+Ziel: Reines Dart-Package fuer QGIS-QML-Layer-Style-Dateien, das ohne
+Flutter- oder QGIS-Laufzeit als Codec und typisiertes Objektmodell
+nutzbar ist.
+
+Umgesetzt:
+
+- Objektmodell fuer `QmlDocument`, `QmlRenderer`, `QmlSymbol`,
+  `QmlSymbolLayer`, `QmlRule`, `QmlCategory` und `QmlRange`.
+- `Qml4DartCodec` mit `parseString`, `parseFile`, `encodeString` und
+  `encodeFile`.
+- Reader fuer `singleSymbol`, `categorizedSymbol`,
+  `graduatedSymbol` und `RuleRenderer` inklusive verschachtelter
+  Regeln.
+- Writer fuer alle Renderer-Typen mit QGIS-importierbarem XML im
+  neuen `Option`-Format.
+- Unterstuetzung fuer neues `Option type="Map"`-Format und altes
+  `<prop k v>`-Format.
+- Symbol-Layer fuer SimpleMarker, SvgMarker, SimpleLine, SimpleFill
+  und RasterFill.
+- Scale Visibility auf Dokument- und Regel-Ebene.
+- Tests fuer Modell, Renderer, Symbol-Layer, Fehlerfaelle,
+  Roundtrips und File-I/O mit QML-Fixtures.
+
+Geplante Punkte:
+
+- Publish-Freigabe vorbereiten (`publish_to: none` entfernen), sobald
+  die API fuer `0.1.0` final freigegeben ist.
+- Weitere QGIS-Symbol-Layer und Renderer-Sonderfaelle schrittweise
+  abdecken.
+- Parser-Warnings fuer nicht unterstuetzte QML-Details weiter
+  verfeinern.
+- Roundtrip-Tests mit realen QGIS-QML-Dateien ausbauen.
+
 ### Adapter-Packages
 
 Betroffene Packages:
 
 - `mapstyler_sld_adapter`
-- `mapstyler_qml_adapter`
+- `mapstyler_qml_adapter` (auf Basis von `qml4dart`)
 - `mapstyler_mapbox_adapter` (auf Basis von `mapbox4dart`)
 
 Ziel: Robuste Roundtrips zwischen externen Formaten und dem gemeinsamen
 Kernmodell.
 
+Umgesetzt (`mapstyler_sld_adapter`):
+
+- `SldStyleParser` fuer SLD-XML nach `mapstyler_style`.
+- SLD-Hierarchie wird in flache mapstyler-Regeln transformiert.
+- Read/Write-Abdeckung fuer Point/Mark, Icon, Line, Fill, Text und
+  Raster-Symbolizer.
+- OGC-Filter fuer Vergleichs-, logische, raeumliche und Distanz-
+  Operatoren.
+- GML-Geometrie-Mapping fuer Point, LineString, Polygon und Envelope.
+- Farbkonvertierung zwischen ARGB und `#rrggbb` inklusive Opacity.
+- Breite Roundtrip- und Coverage-Tests fuer Symbolizer, Filter,
+  Expressions, Geometrien und Raster-Konfiguration.
+
+Umgesetzt (`mapstyler_qml_adapter`):
+
+- `QmlStyleParser` fuer QGIS-QML-XML nach `mapstyler_style` und zurueck.
+- Read-Abdeckung fuer `singleSymbol`, `categorizedSymbol`,
+  `graduatedSymbol` und `RuleRenderer` inklusive verschachtelter Regeln.
+- Write-Abdeckung mit automatischer Renderer-Auswahl.
+- Symbol-Layer fuer SimpleFill, SimpleLine, SimpleMarker, SvgMarker
+  und RasterFill.
+- Filter- und Scale-Visibility-Konvertierung in beide Richtungen.
+- QGIS-Farbformat-Konvertierung inklusive Opacity.
+- Roundtrip-Tests fuer Lesen, Schreiben, Filter, Multi-Layer-Symbole
+  und Parser-API.
+
+Umgesetzt (`mapstyler_mapbox_adapter`):
+
+- `MapboxStyleAdapter` fuer Mapbox GL Style JSON nach
+  `mapstyler_style` und zurueck.
+- Nutzung von `mapbox4dart` als JSON-Codec und Objektmodell.
+- Read-Abdeckung fuer Fill, Line, Circle, Symbol und Raster-Layer.
+- Write-Abdeckung fuer die unterstuetzten mapstyler-Symbolizer.
+- Expression-MVP: `get`, `literal`, `interpolate`, `step`, `case`,
+  `match`, `concat` und `zoom`.
+- Filter-MVP inklusive Vergleichs-, Kombinations-, Negations-,
+  `has`/`!has`- und `in`/`!in`-Operatoren.
+- Web-Mercator-Konvertierung zwischen Zoom und `ScaleDenominator`.
+- Warnings fuer nicht unterstuetzte Mapbox-Layer-Typen.
+
 Geplante Punkte:
 
-- Parser- und Writer-Abdeckung erweitern
-- verlustarme Roundtrips verbessern
-- formattypische Sonderfaelle explizit testen
-- Unterschiede zwischen Kernmodell und Zielformat sauber dokumentieren
+- Publish-Freigabe fuer die Adapter vorbereiten (`publish_to: none`
+  entfernen), sobald die jeweilige API stabil ist.
+- Bei `mapstyler_qml_adapter` Version und Changelog vor Release
+  synchronisieren (`pubspec.yaml` steht auf `0.1.0`,
+  `CHANGELOG.md` fuehrt bereits `0.2.0`).
+- `mapstyler_mapbox_adapter` von lokalen `path`-Dependencies auf
+  veroeffentlichte Versionen von `mapbox4dart` und `mapstyler_style`
+  umstellen, bevor das Package selbst publiziert wird.
+- Parser- und Writer-Abdeckung fuer formattypische Sonderfaelle weiter
+  ausbauen.
+- Verlustarme Roundtrips verbessern und bewusst nicht abbildbare
+  Formatdetails als Warnings oder Dokumentation erfassen.
+- Unterschiede zwischen Kernmodell und Zielformat sauber dokumentieren.
 
 ### `mapstyler_gdal_adapter`
 
