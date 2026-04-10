@@ -11,6 +11,8 @@ festen Terminen.
 formatunabhaengige Kartenstile werden:
 
 - `mapstyler_style` als stabiles Kernmodell
+- `mapbox4dart` als Pure-Dart-Codec und Objektmodell fuer Mapbox GL
+  Style JSON
 - Adapter fuer SLD, QML und Mapbox
 - `flutter_mapstyler` fuer das Rendering in Flutter
 - datenorientierte Adapter wie `mapstyler_gdal_adapter` fuer
@@ -107,13 +109,37 @@ Geplante Punkte:
 - Ausdrucks- und Symbolizer-Abdeckung schrittweise erweitern
 - Tests fuer Rendering-Verhalten und Regressionen ausbauen
 
+### `mapbox4dart`
+
+Ziel: Reines Dart-Package fuer Mapbox GL Style JSON, das ohne
+Flutter-Abhaengigkeit als Codec und typisiertes Objektmodell nutzbar
+ist.
+
+Umgesetzt:
+
+- `0.1.0` auf pub.dev veroeffentlicht.
+- `MapboxStyleCodec` mit `readString`, `readJsonObject`,
+  `writeString` und `writeJsonObject`.
+- Typisiertes Objektmodell fuer `MapboxStyle`, `MapboxLayer` und
+  `MapboxSource`.
+- Unknown-Field-Preservation fuer verlustarme Roundtrips.
+- Forward-kompatibles Handling unbekannter Layer- und Source-Typen.
+- Farbnormalisierung fuer Hex, RGB(A), HSL(A) und CSS-Farbnamen.
+- Version-8-Validierung fuer Mapbox-Style-Dokumente.
+
+Geplante Punkte:
+
+- Mapbox-Expression-Abdeckung schrittweise erweitern.
+- Validierung fuer haeufige Style-Fehler ausbauen.
+- Roundtrip-Tests mit groesseren realen Style-Beispielen ergaenzen.
+
 ### Adapter-Packages
 
 Betroffene Packages:
 
 - `mapstyler_sld_adapter`
 - `mapstyler_qml_adapter`
-- `mapstyler_mapbox_adapter`
+- `mapstyler_mapbox_adapter` (auf Basis von `mapbox4dart`)
 
 Ziel: Robuste Roundtrips zwischen externen Formaten und dem gemeinsamen
 Kernmodell.
@@ -131,17 +157,38 @@ Ziel: Vektordaten aus GDAL-/OGR-unterstuetzten Formaten in
 `StyledFeatureCollection` laden, vereinfachen und Flutter-frei
 bereitstellen.
 
+Umgesetzt:
+
+- Synchrone und isolate-basierte asynchrone Lade-APIs:
+  `loadVectorFileSync`, `loadVectorFile`, `loadVectorFileMultiScaleSync`
+  und `loadVectorFileMultiScale`.
+- Layer-Auswahl per Index oder Name.
+- OGR-seitige Spatial- und Attribut-Filter, damit nur passende
+  Features die FFI-Grenze ueberqueren.
+- Geometrie-Mapping fuer Point, LineString, Polygon sowie
+  MultiPoint, MultiLineString und MultiPolygon.
+- Nicht konvertierbare oder leere Geometrien werden ueber
+  `LoadVectorResult.warnings` gemeldet statt Exceptions zu werfen.
+- Geometrie-Vereinfachung aus `mapstyler_style` waehrend der
+  Feature-Iteration, inklusive nativer Toleranz und
+  meterbasierter Toleranz fuer EPSG:4326.
+- Multi-Scale-Laden mit mehreren Vereinfachungsstufen in einem
+  Iterationsdurchlauf.
+- Layer-Metadaten-Inspektion ueber `inspectVectorFileSync` und
+  `inspectVectorFile`.
+- Tests fuer GeoJSON-Fixtures, Filter, Vereinfachung, Multi-Scale,
+  Layer-Inspektion und Geometrie-Konvertierung.
+
 Geplante Punkte:
 
-- asynchrone und synchrone Lade-APIs fuer Datei- und Layer-basierte
-  Zugriffe bereitstellen
-- Geometrie-Mapping fuer Point, LineString, Polygon und Multi-Varianten
-  robust abdecken
-- Geometrie-Vereinfachung aus `mapstyler_style` waehrend der
-  Feature-Iteration anwenden
-- Layer-Metadaten-Inspektion fuer Dateiauswahl und Tooling anbieten
-- Lese- und Konvertierungstests fuer Shapefile, GeoJSON und GeoPackage
-  aufbauen
+- README und CHANGELOG fuer ein spaeteres Package-Release ergaenzen.
+- Publish-Freigabe vorbereiten (`publish_to: none` entfernen), sobald
+  die API fuer `0.1.0` stabil ist.
+- Testabdeckung fuer Shapefile und GeoPackage neben GeoJSON ergaenzen.
+- CRS- und Toleranzverhalten fuer weitere geographische und projizierte
+  Koordinatensysteme absichern.
+- Fehler- und Ressourcenverhalten bei defekten Dateien und sehr grossen
+  Layern testen.
 
 ### `flutter_mapstyler_editor`
 
