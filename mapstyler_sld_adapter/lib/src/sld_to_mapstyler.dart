@@ -639,7 +639,7 @@ ms.ComparisonFilter _convertLike(
 }
 
 /// BUG-2 fix: PropertyIsNull → NegationFilter(ComparisonFilter(neq, prop, prop)).
-/// GeoStyler has no IsNull operator and LiteralExpression<Object> cannot hold
+/// GeoStyler has no IsNull operator and object literal expressions cannot hold
 /// null (Object is non-nullable). We model "property IS NULL" as
 /// NOT(property != property) — a property compared to itself is always true
 /// when non-null, so negating != gives us IS NULL semantics in practice.

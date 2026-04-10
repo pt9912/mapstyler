@@ -1,3 +1,7 @@
+## 0.1.2
+
+- Fixed Dartdoc angle-bracket warnings reported by pub.dev static analysis.
+
 ## 0.1.1
 
 - Fixed lints reported by pub.dev static analysis.

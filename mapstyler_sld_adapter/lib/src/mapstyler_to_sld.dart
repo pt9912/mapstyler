@@ -512,7 +512,7 @@ gml.GmlGeometry _convertToGmlGeometry(ms.Geometry geom) => switch (geom) {
 
 /// Converts a property-context expression to SLD.
 /// In GeoStyler, ComparisonFilter.property holds the property name as a
-/// LiteralExpression<String>. In SLD, this becomes a PropertyName.
+/// string literal expression. In SLD, this becomes a PropertyName.
 sld.Expression _convertPropertyToSldExpression(ms.Expression<String> expr) =>
     switch (expr) {
       ms.LiteralExpression<String>(:final value) => sld.PropertyName(value),
