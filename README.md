@@ -8,13 +8,13 @@ Inspiriert von [GeoStyler](https://geostyler.org/) (TypeScript), kompatibel mit 
 
 | Package                                               | Beschreibung                                                      | Status      |
 | ----------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
-| [`mapstyler_style`](mapstyler_style/)                 | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | 🚧 In Arbeit |
+| [`mapstyler_style`](mapstyler_style/)                 | Kern-Typen: Style, Rule, Symbolizer, Filter, Expression, Geometry | [0.1.1 veröffentlicht](https://pub.dev/packages/mapstyler_style) |
 | [`mapbox4dart`](mapbox4dart/)                         | Pure-Dart-Codec und Objektmodell für Mapbox GL Style JSON         | [0.1.0 veröffentlicht](https://pub.dev/packages/mapbox4dart) |
-| [`mapstyler_mapbox_adapter`](mapstyler_mapbox_adapter/) | Mapbox GL Style JSON ↔ mapstyler                                  | 🚧 In Arbeit |
-| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | 🚧 In Arbeit |
-| [`qml4dart`](qml4dart/)                               | Pure-Dart-Codec und Objektmodell für QGIS-QML-Layer-Styles        | [0.1.0 veröffentlicht](https://pub.dev/packages/qml4dart) |
-| [`mapstyler_qml_adapter`](mapstyler_qml_adapter/)     | QGIS-QML ↔ mapstyler                                              | 🚧 In Arbeit |
-| [`mapstyler_gdal_adapter`](mapstyler_gdal_adapter/)   | Flutter-freies Laden von Vektordaten in StyledFeatureCollections  | 🚧 In Arbeit |
+| [`mapstyler_mapbox_adapter`](mapstyler_mapbox_adapter/) | Mapbox GL Style JSON ↔ mapstyler                                  | [0.1.0 veröffentlicht](https://pub.dev/packages/mapstyler_mapbox_adapter) |
+| [`mapstyler_sld_adapter`](mapstyler_sld_adapter/)     | SLD via `flutter_map_sld` ↔ mapstyler                             | [0.1.0 veröffentlicht](https://pub.dev/packages/mapstyler_sld_adapter) |
+| [`qml4dart`](qml4dart/)                               | Pure-Dart-Codec und Objektmodell für QGIS-QML-Layer-Styles        | [0.1.1 veröffentlicht](https://pub.dev/packages/qml4dart) |
+| [`mapstyler_qml_adapter`](mapstyler_qml_adapter/)     | QGIS-QML ↔ mapstyler                                              | [0.2.0 veröffentlicht](https://pub.dev/packages/mapstyler_qml_adapter) |
+| [`mapstyler_gdal_adapter`](mapstyler_gdal_adapter/)   | Flutter-freies Laden von Vektordaten in StyledFeatureCollections  | [0.1.0 veröffentlicht](https://pub.dev/packages/mapstyler_gdal_adapter) |
 | [`flutter_mapstyler`](flutter_mapstyler/)             | Rendering auf `flutter_map`                                       | geplant     |
 
 ## Architektur
@@ -152,7 +152,21 @@ docker build --target qml-adapter-coverage-uncovered --no-cache-filter qml-adapt
 docker run --rm qml-adapter:uncov                              # uncovered extrahieren
 docker build --target qml-adapter-coverage -t qml-adapter:cov .
 docker run --rm qml-adapter:cov > coverage/lcov.info           # lcov.info extrahieren
-docker build --target qml-adapter-publish-check --no-cache-filter qml-publish-check --progress=plain .
+docker build --target qml-adapter-publish-check --no-cache-filter qml-adapter-publish-check --progress=plain .
+```
+
+### mapstyler_gdal_adapter
+
+```bash
+docker build --target gdal-analyze .
+docker build --target gdal-test .
+docker build --target gdal-coverage --no-cache-filter gdal-coverage --progress=plain .
+docker build --target gdal-coverage-check --no-cache-filter gdal-coverage --progress=plain .
+docker build --target gdal-coverage-uncovered --no-cache-filter gdal-coverage-uncovered --progress=plain -t gdal:uncov .
+docker run --rm gdal:uncov                              # uncovered extrahieren
+docker build --target gdal-coverage -t gdal:cov .
+docker run --rm gdal:cov > coverage/lcov.info           # lcov.info extrahieren
+docker build --target gdal-publish-check --no-cache-filter gdal-publish-check --progress=plain .
 ```
 
 ### flutter_mapstyler

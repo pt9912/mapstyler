@@ -1,16 +1,15 @@
 name: mapstyler_qml_adapter
 description: Adapter between qml4dart and mapstyler_style.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/pt9912/mapstyler
-publish_to: none
 resolution: workspace
 
 environment:
   sdk: '>=3.7.0 <4.0.0'
 
 dependencies:
-  qml4dart: ^0.1.0
-  mapstyler_style: ^0.1.0
+  qml4dart: ^0.1.1
+  mapstyler_style: ^0.1.1
 
 dev_dependencies:
   test: ^1.25.0
