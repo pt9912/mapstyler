@@ -2,7 +2,6 @@ name: qml4dart
 description: Pure Dart codec and object model for QGIS QML layer style files.
 version: 0.1.0
 repository: https://github.com/pt9912/mapstyler
-publish_to: none
 resolution: workspace
 
 environment:
