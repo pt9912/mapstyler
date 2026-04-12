@@ -1,6 +1,6 @@
-/// Converts mapstyler_style types to qml4dart types (Write direction).
-///
-/// mapstyler_style → **this adapter** → qml4dart → QML XML.
+// Converts mapstyler_style types to qml4dart types (Write direction).
+//
+// mapstyler_style → this adapter → qml4dart → QML XML.
 import 'package:mapstyler_style/mapstyler_style.dart' as ms;
 import 'package:qml4dart/qml4dart.dart' as qml;
 

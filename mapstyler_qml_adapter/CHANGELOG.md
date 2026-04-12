@@ -1,3 +1,8 @@
+## 0.2.1
+
+- Improve package description for pub.dev scoring.
+- Fix dangling library doc comments in color_util, mapstyler_to_qml, and qml_to_mapstyler.
+
 ## 0.2.0
 
 - QmlStyleParser implementing `StyleParser<QmlDocument>` for read/write.

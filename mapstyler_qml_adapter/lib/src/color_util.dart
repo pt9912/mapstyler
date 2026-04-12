@@ -1,5 +1,5 @@
-/// Converts between QGIS "r,g,b,a" color strings and GeoStyler "#rrggbb"
-/// hex strings.
+// Converts between QGIS "r,g,b,a" color strings and GeoStyler "#rrggbb"
+// hex strings.
 
 /// Converts a QGIS color string ("r,g,b,a") to a "#rrggbb" hex string.
 ///

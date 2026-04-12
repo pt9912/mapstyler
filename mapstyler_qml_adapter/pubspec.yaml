@@ -1,6 +1,6 @@
 name: mapstyler_qml_adapter
-description: Adapter between qml4dart and mapstyler_style.
-version: 0.2.0
+description: Converts between QGIS QML layer styles and the mapstyler_style type system via qml4dart. Supports reading and writing of QML symbology including fill, line, and marker symbolizers.
+version: 0.2.1
 repository: https://github.com/pt9912/mapstyler
 resolution: workspace
 
